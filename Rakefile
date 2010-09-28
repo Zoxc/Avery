@@ -61,4 +61,11 @@ task :test => :build do
 	end
 end
 
+desc "Test Avery with Bochs"
+task :bochs => :build do
+	Builder.execute 'bin/inject',  'test/grub/grub.img', 'test/test.img', output, 'system\\kernel.elf'
+	Dir.chdir('test') do
+		Builder.execute 'bochs', '-q'
+	end
+end
 task :default => :build
