@@ -1,11 +1,12 @@
 .code32
-.local stack
-.comm stack, 4096
+#.local stack
+.global stack
+.comm stack, 8192
 
 .global bootstrap.32
 bootstrap.32:
 	cli
-	movl $stack + 4096, %esp
+	movl $stack + 8192, %esp
 	pushl %ebx
 	call setup_long_mode
 loop.32:

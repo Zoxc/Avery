@@ -24,9 +24,9 @@ package = Package.new do
 	use Assembly
 	c = use Languages::C
 	c.std 'c99'
-
+	
 	# files
-	boot = collect('src/x86_64/bootstrap.*') do
+	boot = collect('src/x86_64/bootstrap/*') do
 		set Architecture, 'x86'
 		set Toolchain::LLVM::Target, 'x86-unknown-linux-gnu'
 	end
