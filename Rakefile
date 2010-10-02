@@ -12,16 +12,21 @@ package = Package.new do
 	# setup toolchains
 	set Architecture, 'x86_64'
 	
+	clang = true
+	
 	set Toolchain::LLVM::Target, 'x86_64-unknown-linux-gnu'
-	use Toolchain::LLVM
+	use Toolchain::LLVM if clang
 	
 	set Toolchain::GNU::Prefix, 'x86_64-elf-'
 	set Toolchain::GNU::Linker::Script, 'src/x86_64/kernel.ld'
 	set Toolchain::GNU::Linker::PageSize, 0x1000
-	use Toolchain::GNU
+	use Toolchain::GNU::Assembler
+	use Toolchain::GNU::Linker
+	use Toolchain::GNU::Compiler unless clang
+	use Toolchain::GNU::Compiler::Preprocessor unless clang
 	
 	# languages
-	use Assembly
+	use Assembly::WithCPP
 	c = use Languages::C
 	c.std 'c99'
 	
@@ -50,14 +55,8 @@ end
 
 desc "Test Avery with QEMU"
 task :test => :build do
-	#FileUtils.copy(output, 'test/disk/boot')
-	#Builder.execute *%w{bin/mkisofs -R -b BOOT/GRUB/I386_PC/ELTORITO.IMG -no-emul-boot -boot-load-size 4 -boot-info-table -o test/cd.iso test/disk}
-	ENV['SDL_VIDEODRIVER'] = 'windib'
-	ENV['SDL_AUDIODRIVER'] = 'dsound'
-	ENV['QEMU_AUDIO_DRV'] = 'dsound'
-	ENV['QEMU_AUDIO_LOG_TO_MONITOR'] = '0'
 	Dir.chdir('test/qemu/') do
-		Builder.execute *%w{qemu-system-x86_64.exe -L . -m 128 -kernel ./../../build/kernel.elf -localtime -M pc}
+		Builder.execute *%w{qemu-system-x86_64.exe -m 128 -kernel ./../../build/kernel.elf}
 	end
 end
 

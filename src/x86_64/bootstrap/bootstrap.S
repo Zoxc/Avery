@@ -17,8 +17,11 @@ loop.32:
 
 .global bootstrap.64
 bootstrap.64:
+	# Reset the stack
+	movabs $stack + 8192, %rsp
+	
 	# Zero the upper bits of %rcx
-	andq 0xFFFFFFFF, %rcx
+	andq $-1, %rcx
 	
 	# Load data segments
 	movw $0x10, %ax
@@ -28,7 +31,7 @@ bootstrap.64:
 	movw %ax, %gs
 	
 	# Call kernel
-	pushq %rcx
+	push %rcx
 	call kernel
 loop.64:
 	hlt

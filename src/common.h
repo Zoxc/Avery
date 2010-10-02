@@ -1,5 +1,16 @@
 #pragma once
 
+#ifndef __has_builtin
+  #define __has_builtin(x) 0
+#endif
+
+#if !__has_builtin(__builtin_unreachable)
+	static inline void __builtin_unreachable() __attribute((noreturn));
+	static inline void __builtin_unreachable()
+	{
+	}
+#endif
+
 #ifndef __cplusplus
 #define bool	_Bool
 #define true	1

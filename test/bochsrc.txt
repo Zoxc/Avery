@@ -488,7 +488,7 @@ log: bochsout.txt
 panic: action=ask
 error: action=report
 info: action=report
-debug: action=report
+debug: action=ignore
 #pass: action=fatal
 
 #=======================================================================

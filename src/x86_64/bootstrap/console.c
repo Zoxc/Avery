@@ -1,10 +1,11 @@
 #include "common.h"
+
+BOOTSTRAP_CODE
+
 #include "console.h"
 #include "vprintf.h"
 #include <stdarg.h>
 #include "../io.h"
-
-BOOTSTRAP_CODE
 
 #define MAX_SIZE 4000
 #define SIZE_X 80
