@@ -2,7 +2,7 @@
 //                Made for JamesM's tutorials <www.jamesmolloy.co.uk>
 #pragma once
 
-#include "common.h"
+#include "common.hpp"
 
 #define MULTIBOOT_HEADER_FLAG_PAGE_ALIGN (1 << 0)
 #define MULTIBOOT_HEADER_FLAG_MEMORY_INFO (1 << 1)

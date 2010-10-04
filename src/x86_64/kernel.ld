@@ -6,20 +6,30 @@ SECTIONS
 	
 	.multiboot : { *(.multiboot) }
 	
-	.text : { *(.text) }
+	.text : {
+		*(.text)
+		*(.gnu.linkonce.t*)
+	}
 	
 	.rodata :
 	{
 		*(.rodata)
+		*(.gnu.linkonce.r*)
+		
+		ctors_start = .;
+		*(.ctor*)
+		ctors_end = .;
 	}
 	
 	.data :
 	{
 		*(.data)
+		*(.gnu.linkonce.d*)
 	}
 	
 	.bss :
 	{
 		*(.bss)
+		*(.gnu.linkonce.b*)
 	}
 }

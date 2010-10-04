@@ -3,9 +3,8 @@
 BOOTSTRAP_CODE
 
 #include "console.h"
-#include "vprintf.h"
 #include <stdarg.h>
-#include "../io.h"
+#include "io.h"
 
 #define MAX_SIZE 4000
 #define SIZE_X 80
@@ -21,15 +20,6 @@ BOOTSTRAP_CODE
 static uint8_t x = MIN_X;
 static uint8_t y = MIN_Y;
 static uint8_t color = 15;
-
-void kprint(const char * format, ...)
-{
-	va_list args;
-
-	va_start(args, format);
-	vprintf(format, args);
-	va_end(args);
-}
 
 enum console_color console_get_fg(void)
 {

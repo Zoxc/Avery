@@ -1,7 +1,7 @@
 #include "common.h"
 BOOTSTRAP_CODE
 
-#include "../../multiboot.h"
+#include "multiboot.h"
 #include "console.h"
 
 #define MULTIBOOT_HEADER_FLAGS MULTIBOOT_HEADER_FLAG_PAGE_ALIGN | MULTIBOOT_HEADER_FLAG_MEMORY_INFO
@@ -41,7 +41,7 @@ static inline uint64_t offset(const void *pointer)
 
 extern void gdt_flush(uint32_t);
 
-void setup_long_mode(multiboot_t *multiboot)
+void setup_long_mode(void *multiboot)
 {
 	console_fg(console_light_gray);
 	console_bg(console_black);
@@ -103,6 +103,4 @@ void setup_long_mode(multiboot_t *multiboot)
 
 	// do a far jump into long mode, pass multiboot information in %ecx
 	asm volatile ("ljmp %0, $bootstrap.64" :: "i"(sizeof(struct descriptor) * 1), "c"(multiboot));
-	
-	__builtin_unreachable();
 }

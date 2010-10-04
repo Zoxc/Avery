@@ -1,16 +1,21 @@
 require_relative '../reno-0.2/reno'
 
 include Reno
-include Reno::Toolchain
 
 output = 'build/kernel.elf'
+
 package = Package.new do
 	# name and version
 	name 'Avery'
 	version '0.0.0'
 	
 	# setup toolchains
-	set Architecture, 'x86_64'
+	set Toolchain::Architecture, Arch::X86_64
+	set Toolchain::Optimization, :balanced
+	
+	set Arch::RedZone, false
+	set Arch::FreeStanding, true
+	set Arch::X86_64::MemoryModel, :large
 	
 	clang = true
 	
@@ -22,24 +27,29 @@ package = Package.new do
 	set Toolchain::GNU::Linker::PageSize, 0x1000
 	use Toolchain::GNU::Assembler
 	use Toolchain::GNU::Linker
-	use Toolchain::GNU::Compiler unless clang
-	use Toolchain::GNU::Compiler::Preprocessor unless clang
+	
+	unless clang
+		use Toolchain::GNU::Compiler
+		use Toolchain::GNU::Compiler::Preprocessor
+	end
 	
 	# languages
 	use Assembly::WithCPP
 	c = use Languages::C
 	c.std 'c99'
+	cxx = use Languages::CXX
+	cxx.std 'c++0x'
 	
 	# files
 	boot = collect('src/x86_64/bootstrap/*') do
-		set Architecture, 'x86'
+		set Toolchain::Architecture, Arch::X86
 		set Toolchain::LLVM::Target, 'x86-unknown-linux-gnu'
 	end
 	
 	# convert to an object file to preserve settings
 	# boot = boot.convert(ObjectFile)
 	
-	files = boot & collect('src/x86_64/*.c') # merge collection, prefer nodes in at the left side
+	files = boot & collect('src/**/*') # merge collection, prefer nodes in at the left side
 	
 	# convert all files to assembly for debug purposes
 	files = files.convert(Assembly)
@@ -67,4 +77,5 @@ task :bochs => :build do
 		Builder.execute 'bochs', '-q'
 	end
 end
+
 task :default => :build

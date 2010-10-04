@@ -8,6 +8,7 @@
 	static inline void __builtin_unreachable() __attribute((noreturn));
 	static inline void __builtin_unreachable()
 	{
+		while(1); //TODO: replace by panic
 	}
 #endif
 
