@@ -1,7 +1,7 @@
 #pragma once
 #include "../common.hpp"
 
-namespace X86
+namespace Arch
 {
 	static inline void outb(uint16_t port, uint8_t value)
 	{

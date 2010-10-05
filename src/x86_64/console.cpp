@@ -1,7 +1,25 @@
 #include "console.hpp"
+#include "arch.hpp"
 #include "io.hpp"
 
 Console console;
+
+const Console::Color Console::black = {0};
+const Console::Color Console::blue = {1};
+const Console::Color Console::green = {2};
+const Console::Color Console::cyan = {3};
+const Console::Color Console::red = {4};
+const Console::Color Console::magenta = {5};
+const Console::Color Console::brown = {6};
+const Console::Color Console::light_gray = {7};
+const Console::Color Console::dark_gray = {8};
+const Console::Color Console::light_blue = {9};
+const Console::Color Console::light_green = {10};
+const Console::Color Console::light_cyan = {11};
+const Console::Color Console::light_red = {12};
+const Console::Color Console::light_magenta = {13};
+const Console::Color Console::yellow = {14};
+const Console::Color Console::white = {15};
 
 const unsigned Console::max_chars = 2000;
 
@@ -14,44 +32,128 @@ const unsigned Console::min_y = 1;
 const unsigned Console::max_x = 79;
 const unsigned Console::max_y = 25;
 
+decltype(Console::endl) Console::endl;
+
+void (*Console::flush_line)() = 0;
+
 uint16_t *const Console::vga = (uint16_t *)0xb8000;
 
-Console::Console() : x(min_x), y(min_y), color((uint8_t)LightGray | (uint8_t)Black << 4)
+Console::Console() : x(min_x), y(min_y)
 {
+	fg(light_gray).bg(black);
 }
 
-Console::Color Console::get_fg()
+void Console::do_panic()
 {
-	return (Color)(color & 0x0F);
+	Arch::panic();
 }
 
-Console::Color Console::get_bg()
+Console &Console::Console::panic()
 {
-	return (Color)((color & 0xF0) >> 4);
-}
-
-Console &Console::fg(Color new_fg)
-{
-	color = ((uint8_t)new_fg & 0x0F) | (this->color & 0xF0);
+	flush_line = do_panic;
+	newline(); newline();
+	
+	*this << Console::light_red << "Panic" << Console::white << ": ";
 	
 	return *this;
 }
 
-Console &Console::bg(Color new_bg)
+Console &Console::operator <<(const char *str)
 {
-	color = (color & 0x0F) | ((uint8_t)new_bg << 4);
+	return s(str);
+}
+
+Console &Console::operator <<(decltype(endl) &)
+{
+	newline();
+	
+	if(flush_line != 0)
+		flush_line();
+		
+	return *this;
+}
+
+Console &Console::operator <<(const Color &new_fg)
+{
+	fg(new_fg);
 	
 	return *this;
+}
+
+Console &Console::operator <<(const unsigned long value)
+{
+	put_base(value, 10);
+	
+	return *this;
+}
+
+Console &Console::fg(const Color &new_fg)
+{
+	color = new_fg.value | (color & 0xF0);
+	
+	return *this;
+}
+
+Console &Console::bg(const Color &new_bg)
+{
+	color = (color & 0x0F) | new_bg.value << 4;
+	
+	return *this;
+}
+
+Console &Console::lb()
+{
+	newline();
+	
+	return *this;
+}
+
+Console &Console::w(unsigned long count)
+{
+	while(count--)
+		c(' ');
+	
+	return *this;
+}
+
+Console &Console::hex(const unsigned long value)
+{
+	s("0x");
+	put_base_padding(value, 16, sizeof(value));
+	
+	return *this;
+}
+
+const char Console::digits[] = "0123456789ABCDEF";
+
+void Console::put_base(size_t value, size_t base)
+{
+	size_t temp = value / base;
+	
+	if(temp)
+		put_base(temp, base);
+	
+	c(digits[value % base]);
+}
+
+void Console::put_base_padding(size_t value, size_t base, size_t min_size)
+{
+	size_t temp = value / base;
+	
+	if(min_size)
+		put_base_padding(temp, base, min_size - 1);
+	
+	c(digits[value % base]);
 }
 
 void Console::update_cursor()
 {
 	uint16_t loc = y * 80 + x;
 	
-	X86::outb(0x3D4, 14);
-	X86::outb(0x3D5, loc >> 8);
-	X86::outb(0x3D4, 15);
-	X86::outb(0x3D5, loc);
+	Arch::outb(0x3D4, 14);
+	Arch::outb(0x3D5, loc >> 8);
+	Arch::outb(0x3D4, 15);
+	Arch::outb(0x3D5, loc);
 }
 
 void Console::scroll()
@@ -81,7 +183,7 @@ void Console::newline()
 	update_cursor();
 }
 
-Console &Console::putc(const char c)
+Console &Console::c(const char c)
 {
 	switch((uint8_t)c)
 	{
@@ -111,14 +213,14 @@ Console &Console::putc(const char c)
 	return *this;
 }
 
-Console &Console::puts(const char *str)
+Console &Console::s(const char *str)
 {
 	if(!str)
 		return *this;
 	
 	while(*str)
 	{
-		putc(*str);
+		c(*str);
 		str++;
 	}
 	
