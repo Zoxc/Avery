@@ -55,6 +55,11 @@ package = Package.new do
 	files = files.convert(Assembly)
 	
 	files.merge(Executable).name(output, false)
+	
+	set Toolchain::GNU::Linker::Script, 'src/x86_64/kernel64.ld'
+	
+	files.merge(Executable).name('build/kernel64.elf', false)
+	
 	Builder.execute 'bin/mbchk', output
 end
 
