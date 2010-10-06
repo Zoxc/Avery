@@ -35,31 +35,28 @@ public:
 
 	static void (*flush_line)();
 	
-	static class {} endl;
-	Console &operator <<(decltype(endl) &);
-	
-	Console &operator <<(const unsigned long value);
-	
-	Console &operator <<(const char *str);
-	
-	Console &operator <<(const Color &new_fg);
-	
 	Console &fg(const Color &new_fg);
 	Console &bg(const Color &new_bg);
 	
-	Console &hex(const unsigned long value);
+	Console &u(const unsigned long value);
+	
+	Console &x(const unsigned long value);
+	Console &x(const void *value);
 	
 	Console &lb();
+	Console &endl();
 	
 	Console &w(unsigned long count = 1);
+	Console &a(unsigned long count = 8);
 	
 	Console &c(const char c);
 	Console &s(const char *str);
 	
 private:
-	uint8_t x;
-	uint8_t y;
+	uint8_t x_offset;
+	uint8_t y_offset;
 	uint8_t color;
+	const Color *hex_fg;
 	
 	void update_cursor();
 	void scroll();

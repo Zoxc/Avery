@@ -32,13 +32,11 @@ const unsigned Console::min_y = 1;
 const unsigned Console::max_x = 79;
 const unsigned Console::max_y = 25;
 
-decltype(Console::endl) Console::endl;
-
 void (*Console::flush_line)() = 0;
 
 uint16_t *const Console::vga = (uint16_t *)0xb8000;
 
-Console::Console() : x(min_x), y(min_y)
+Console::Console() : x_offset(min_x), y_offset(min_y), hex_fg(&light_green)
 {
 	fg(light_gray).bg(black);
 }
@@ -53,36 +51,17 @@ Console &Console::Console::panic()
 	flush_line = do_panic;
 	newline(); newline();
 	
-	*this << Console::light_red << "Panic" << Console::white << ": ";
+	fg(Console::light_red).s("Panic").fg(Console::white).s(": ");
 	
 	return *this;
 }
 
-Console &Console::operator <<(const char *str)
-{
-	return s(str);
-}
-
-Console &Console::operator <<(decltype(endl) &)
+Console &Console::endl()
 {
 	newline();
 	
 	if(flush_line != 0)
 		flush_line();
-		
-	return *this;
-}
-
-Console &Console::operator <<(const Color &new_fg)
-{
-	fg(new_fg);
-	
-	return *this;
-}
-
-Console &Console::operator <<(const unsigned long value)
-{
-	put_base(value, 10);
 	
 	return *this;
 }
@@ -108,6 +87,16 @@ Console &Console::lb()
 	return *this;
 }
 
+Console &Console::a(unsigned long count)
+{
+	c(' ');
+	
+	while((x_offset - min_x) % count)
+		c(' ');
+	
+	return *this;
+}
+
 Console &Console::w(unsigned long count)
 {
 	while(count--)
@@ -116,10 +105,32 @@ Console &Console::w(unsigned long count)
 	return *this;
 }
 
-Console &Console::hex(const unsigned long value)
+Console &Console::u(const unsigned long value)
 {
+	put_base(value, 10);
+	
+	return *this;
+	
+}
+
+Console &Console::x(const unsigned long value)
+{
+	uint8_t temp = color;
+	
+	if(hex_fg)
+		fg(*hex_fg);
+	
 	s("0x");
-	put_base_padding(value, 16, sizeof(value));
+	put_base_padding(value, 16, sizeof(value) * 2);
+	
+	color = temp;
+	
+	return *this;
+}
+
+Console &Console::x(const void *value)
+{
+	x((unsigned long)value);
 	
 	return *this;
 }
@@ -148,7 +159,7 @@ void Console::put_base_padding(size_t value, size_t base, size_t min_size)
 
 void Console::update_cursor()
 {
-	uint16_t loc = y * 80 + x;
+	uint16_t loc = y_offset * 80 + x_offset;
 	
 	Arch::outb(0x3D4, 14);
 	Arch::outb(0x3D5, loc >> 8);
@@ -165,19 +176,19 @@ void Console::scroll()
 	
 	for (size_t x = 0; x < size_x; x++)
 	{
-		*(vga + (size_y - 1) * 80 + x) = ' ' | (color << 8);
+		*(vga + (size_y - 1) * 80 + x_offset) = ' ' | (color << 8);
 	}
 }
 
 void Console::newline()
 {
-	y++;
-	x = min_x;
+	y_offset++;
+	x_offset = min_x;
 	
-	if(y >= max_y)
+	if(y_offset >= max_y)
 	{
 		scroll();
-		y = max_y - 1;
+		y_offset = max_y - 1;
 	}
 	
 	update_cursor();
@@ -192,19 +203,19 @@ Console &Console::c(const char c)
 			break;
 			
 		case '\t':
-			x = (x + 4) & ~(4 - 1);
+			x_offset = (x_offset + 4) & ~(4 - 1);
 			
-			if(x >= max_x)
+			if(x_offset >= max_x)
 				newline();
 			else
 				update_cursor();
 			break;
 			
 		default:
-			if(x >= max_x)
+			if(x_offset >= max_x)
 				newline();
 			
-			*(vga + y * 80 + x++) = (uint8_t)c | (color << 8);
+			*(vga + y_offset * 80 + x_offset++) = (uint8_t)c | (color << 8);
 
 			update_cursor();
 			break;
@@ -232,8 +243,8 @@ Console & Console::clear(void)
 	for(uint16_t *pos = vga; pos < vga + max_chars; pos++)
 		*pos = ' ' | (color << 8);
 
-	x = min_x;
-	y = min_y;
+	x_offset = min_x;
+	y_offset = min_y;
 	update_cursor();
 	
 	return *this;

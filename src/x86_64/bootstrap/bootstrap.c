@@ -43,6 +43,7 @@ extern void gdt_flush(uint32_t);
 
 void setup_long_mode(void *multiboot)
 {
+	//TODO: Verify multiboot magic
 	console_fg(console_light_gray);
 	console_bg(console_black);
 	console_cls();
@@ -53,6 +54,8 @@ void setup_long_mode(void *multiboot)
 	gdt64_pointer.base = offset(gdt);
 
 	page_pml4t[0] = offset(&page_pdpt) | 3;
+	page_pml4t[510] = offset(&page_pdpt) | 3;
+	page_pml4t[511] = offset(&page_pml4t) | 3;
 	page_pdpt[0] = offset(&page_pdt) | 3;
 	page_pdt[0] = offset(&page_pt) | 3;
 	

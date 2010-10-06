@@ -29,3 +29,14 @@ typedef int int32_t;
 typedef unsigned uint32_t;
 typedef long long int64_t;
 typedef unsigned long long uint64_t;
+
+static inline size_t align(size_t value, size_t alignment)
+{
+	alignment -= 1;
+	return (value + alignment) & ~alignment;
+};
+
+static inline size_t align_down(size_t value, size_t alignment)
+{
+	return value & ~(alignment - 1);
+};

@@ -31,7 +31,7 @@ bootstrap.64:
 	movw %ax, %gs
 	
 	# Call kernel
-	push %rcx
+	mov %rcx, %rdi
 	call kernel
 loop.64:
 	hlt

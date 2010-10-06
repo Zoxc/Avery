@@ -4,6 +4,8 @@ SECTIONS
 {
 	. = 0x100000;
 	
+	kernel_start = .;
+	
 	.multiboot : { *(.multiboot) }
 	
 	.text : {
@@ -32,4 +34,8 @@ SECTIONS
 		*(.bss)
 		*(.gnu.linkonce.b*)
 	}
+	
+	kernel_end = .;
+	
+	. += 0xFFFFFF0000000000;
 }

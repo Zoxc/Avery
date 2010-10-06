@@ -43,18 +43,22 @@ extern "C" void Arch::isr_handler(const InterruptInfo &info)
 		handler(info);
 	else
 	{
-		console.panic() << "Unhandled interrupt: " << info.interrupt_index << "\n" << Console::light_gray;
-		console
-			.s("ss: ").hex(info.ss).w()
-			.s("prev_rsp: ").hex(info.prev_rsp).w()
-			.s("rflags: ").hex(info.rflags).w()
-			.s("cs: ").hex(info.cs).w()
+		console.panic().s("Unhandled interrupt: ").u(info.interrupt_index).lb().lb().fg(Console::light_gray)
+			.s("ss:     ").x(info.ss).a()
+			.s("rsp:    ").x(info.prev_rsp).a()
+			.s("rflags: ").x(info.rflags).a()
 			.lb()
-			.s("rip: ").hex(info.rip).w()
-			.s("rax: ").hex(info.rax).w()
-			.s("rcx: ").hex(info.rcx).w()
-			.s("rdx: ").hex(info.rdx).w();
-		console << Console::endl;
+			.s("cs:     ").x(info.cs).a()
+			.s("ds:     ").x(info.ds).a()
+			.s("indx:   ").x(info.interrupt_index).a()
+			.lb()
+			.s("errnr:  ").x(info.error_code).a()
+			.s("rip:    ").x(info.rip).a()
+			.s("rax:    ").x(info.rax).a()
+			.lb()
+			.s("rcx:    ").x(info.rcx).a()
+			.s("rdx:    ").x(info.rdx).a()
+		.endl();
 	}
 }
 

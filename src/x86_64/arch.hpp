@@ -1,5 +1,6 @@
 #pragma once
 #include "../common.hpp"
+#include "../multiboot.hpp"
 
 namespace Arch
 {
@@ -40,11 +41,13 @@ namespace Arch
 	
 	typedef void (*interrupt_handler_t)(const InterruptInfo &);
 	
+	const size_t page_size = 0x1000;
+
 	extern interrupt_handler_t interrupt_handlers[256];
 	
 	void register_interrupt_handler(uint8_t index, interrupt_handler_t handler);
 	
 	void initialize_idt();
-	void initialize();
+	void initialize(const multiboot_t &info);
 	void panic();
 };

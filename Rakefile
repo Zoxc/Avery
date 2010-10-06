@@ -16,6 +16,9 @@ package = Package.new do
 	set Arch::RedZone, false
 	set Arch::FreeStanding, true
 	set Arch::X86_64::MemoryModel, :large
+	set Arch::X86::MMX, false
+	set Arch::X86::SSE, false
+	set Arch::X86::SSE2, false
 	
 	clang = true
 	
@@ -51,13 +54,13 @@ package = Package.new do
 	
 	files = boot & collect('src/**/*') # merge collection, prefer nodes in at the left side
 	
-	# convert all files to assembly for debug purposes
+	# convert all files to assembly for debugging purposes
 	files = files.convert(Assembly)
 	
 	files.merge(Executable).name(output, false)
 	
+	# output a seperate 64-bit ELF for debugging purposes
 	set Toolchain::GNU::Linker::Script, 'src/x86_64/kernel64.ld'
-	
 	files.merge(Executable).name('build/kernel64.elf', false)
 	
 	Builder.execute 'bin/mbchk', output
