@@ -50,6 +50,16 @@ void error(const char *msg)
 	console_puts(msg);
 }
 
+struct cpuid_result
+{
+	uint32_t eax, ebx, ecx, edx;
+};
+
+static void cpuid(uint32_t input, struct cpuid_result *result)
+{
+	asm ("cpuid" : "=a"(result->eax), "=b"(result->ebx), "=c"(result->ecx), "=d"(result->edx) : "a"(input));
+}
+
 void setup_long_mode(void *multiboot, uint32_t magic)
 {
 	console_fg(console_light_gray);
@@ -85,44 +95,44 @@ void setup_long_mode(void *multiboot, uint32_t magic)
 		page_pt[i] = address | 3; // map address and mark it present/writable
 		address += 0x1000;
 	}
-
-	uint32_t result;
-
-	asm ("cpuid" : "=a"(result) : "a"(0x80000000));
 	
-	if(result < 0x80000001)
+	struct cpuid_result result;
+	
+	cpuid(0x80000000, &result);
+	
+	if(result.eax < 0x80000001)
 	{
 		error("Long mode is not supported (no extended flags was found)!");
 		return;
 	}
-
-	asm ("cpuid" : "=d"(result) : "a"(0x80000001) : "ecx");
+	
+	cpuid(0x80000001, &result);
 	
 	const unsigned long_mode_flag = 1 << 29;
-
-	if(!(result & long_mode_flag))
+	
+	if(!(result.edx & long_mode_flag))
 	{
 		error("Long mode is not supported (bit was not set)!");
 		return;
 	}
-
+	
 	console_puts("Entering long mode...");
-
+	
 	// load the 64-bit GDT
 	asm volatile ("lgdt %0" :: "m"(gdt64_pointer));
-
+	
 	// load PML4T into CR3
 	asm volatile ("movl %%eax, %%cr3" :: "a" (&page_pml4t));
-
+	
 	// set the long mode bit
 	asm volatile ("rdmsr; orl %0, %%eax; wrmsr" :: "i"(1 << 8), "c"(0xC0000080) : "eax", "edx");
 	
 	// enable PAE
 	asm volatile ("movl %%cr4, %%eax; orl %0, %%eax; movl %%eax, %%cr4" :: "i"(1 << 5) : "eax");
-
+	
 	// enable paging
 	asm volatile ("movl %%cr0, %%eax; orl %0, %%eax; movl %%eax, %%cr0" :: "i"(1 << 31) : "eax");
-
+	
 	// do a far jump into long mode, pass multiboot information in %ecx
 	asm volatile ("ljmp %0, $bootstrap.64" :: "i"(sizeof(struct descriptor) * 1), "c"(multiboot));
 }
