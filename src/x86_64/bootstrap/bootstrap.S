@@ -1,12 +1,13 @@
 .code32
-#.local stack
+.align 16
 .global stack
-.comm stack, 8192
+.comm stack, 0x4000
 
 .global bootstrap.32
 bootstrap.32:
 	cli
-	movl $stack + 8192, %esp
+	movl $(stack + 0x4000), %esp
+	pushl %eax
 	pushl %ebx
 	call setup_long_mode
 loop.32:
@@ -18,10 +19,7 @@ loop.32:
 .global bootstrap.64
 bootstrap.64:
 	# Reset the stack
-	movabs $stack + 8192, %rsp
-	
-	# Zero the upper bits of %rcx
-	andq $-1, %rcx
+	movabs $(stack + 0x4000), %rsp
 	
 	# Load data segments
 	movw $0x10, %ax
@@ -29,6 +27,9 @@ bootstrap.64:
 	movw %ax, %es
 	movw %ax, %fs
 	movw %ax, %gs
+	
+	# Zero the upper bits of %rcx
+	#andq $0xFFFFFFFF, %rcx
 	
 	# Call kernel
 	mov %rcx, %rdi

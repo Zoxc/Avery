@@ -83,3 +83,7 @@ private:
 };
 
 extern Console console;
+
+#define stringify(value) #value
+#define assert_internal(expression, file, line, ...) ((expression) ? (void)0 : (void)console.panic().s(file ":" stringify(line) ": " __VA_ARGS__).endl())
+#define assert(expression, ...) assert_internal(expression, __FILE__, __LINE__, ## __VA_ARGS__)

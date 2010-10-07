@@ -27,7 +27,9 @@ enum console_color console_get_bg(void);
 void console_fg(enum console_color fg);
 void console_bg(enum console_color bg);
 
+void console_put_base_padding(size_t value, size_t base, size_t min_size);
+
 void console_putc(char c);
-void console_puts(char *str);
+void console_puts(const char *str);
 
 void kprint(const char * format, ...);

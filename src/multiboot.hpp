@@ -4,9 +4,6 @@
 
 #include "common.hpp"
 
-#define MULTIBOOT_HEADER_FLAG_PAGE_ALIGN (1 << 0)
-#define MULTIBOOT_HEADER_FLAG_MEMORY_INFO (1 << 1)
-
 #define MULTIBOOT_FLAG_MEM     0x001
 #define MULTIBOOT_FLAG_DEVICE  0x002
 #define MULTIBOOT_FLAG_CMDLINE 0x004
@@ -19,9 +16,7 @@
 #define MULTIBOOT_FLAG_APM     0x200
 #define MULTIBOOT_FLAG_VBE     0x400
 
-#define MULTIBOOT_MAGIC        0x1BADB002
-
-#define MULTIBOOT_CHECKSUM(flags) (-(MULTIBOOT_MAGIC + (flags)))
+#define MULTIBOOT_MAGIC        0x2BADB002
 
 struct multiboot_header
 {
@@ -57,11 +52,3 @@ typedef struct
 	uint32_t vbe_interface_off;
 	uint32_t vbe_interface_len;
 } __attribute__((packed)) multiboot_t;
-
-typedef struct
-{
-	uint32_t size;
-	uint64_t base_addr;
-	uint64_t length;
-	uint32_t type;
-} __attribute__((packed)) mmap_entry_t;

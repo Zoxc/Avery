@@ -51,6 +51,18 @@ static void console_update_cursor()
 	outb(0x3D5, loc);
 }
 
+static const char digits[] = "0123456789ABCDEF";
+
+void console_put_base_padding(size_t value, size_t base, size_t min_size)
+{
+	size_t temp = value / base;
+	
+	if(min_size)
+		console_put_base_padding(temp, base, min_size - 1);
+	
+	console_putc(digits[value % base]);
+}
+
 static void console_scroll(void)
 {
 	for (size_t i = 0; i < SIZE_Y * SIZE_X; i++)
@@ -106,7 +118,7 @@ void console_putc(char c)
 	}
 }
 
-void console_puts(char *str)
+void console_puts(const char *str)
 {
 	if(!str)
 		return;

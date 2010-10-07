@@ -120,7 +120,8 @@ Console &Console::x(const unsigned long value)
 	if(hex_fg)
 		fg(*hex_fg);
 	
-	s("0x");
+	c('0').c('x');
+	
 	put_base_padding(value, 16, sizeof(value) * 2);
 	
 	color = temp;

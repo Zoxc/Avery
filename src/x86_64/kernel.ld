@@ -13,14 +13,14 @@ SECTIONS
 		*(.gnu.linkonce.t*)
 	}
 	
-	.rodata :
+	.rodata ALIGN(4096) :
 	{
-		*(.rodata)
-		*(.gnu.linkonce.r*)
-		
 		ctors_start = .;
 		*(.ctor*)
 		ctors_end = .;
+		
+		*(.rodata)
+		*(.gnu.linkonce.r*)
 	}
 	
 	.data :

@@ -6,7 +6,7 @@ BOOTSTRAP_CODE
 
 #define MULTIBOOT_HEADER_FLAGS MULTIBOOT_HEADER_FLAG_PAGE_ALIGN | MULTIBOOT_HEADER_FLAG_MEMORY_INFO
 
-const struct multiboot_header header __attribute__ ((section (".multiboot"))) = {MULTIBOOT_MAGIC, MULTIBOOT_HEADER_FLAGS, MULTIBOOT_CHECKSUM(MULTIBOOT_HEADER_FLAGS)};
+const struct multiboot_header header __attribute__ ((section (".multiboot"))) = {MULTIBOOT_HEADER_MAGIC, MULTIBOOT_HEADER_FLAGS, MULTIBOOT_CHECKSUM(MULTIBOOT_HEADER_FLAGS)};
 
 static uint64_t page_pml4t[512] __attribute__((aligned(0x1000)));
 static uint64_t page_pdpt[512] __attribute__((aligned(0x1000)));
@@ -41,21 +41,40 @@ static inline uint64_t offset(const void *pointer)
 
 extern void gdt_flush(uint32_t);
 
-void setup_long_mode(void *multiboot)
+void error(const char *msg)
 {
-	//TODO: Verify multiboot magic
+	console_fg(console_light_red);
+	console_puts("Error");
+	console_fg(console_white);
+	console_puts(": ");
+	console_puts(msg);
+}
+
+void setup_long_mode(void *multiboot, uint32_t magic)
+{
 	console_fg(console_light_gray);
 	console_bg(console_black);
 	console_cls();
-	console_puts("Booting Avery...\n");
+	console_puts("Booting ");
+	console_fg(console_light_green);
+	console_puts("Avery");
+	console_fg(console_light_gray);
+	console_puts("...\n\n");
 
+	if(magic != MULTIBOOT_MAGIC)
+	{
+		error("This kernel requires a multiboot compatible loader!");
+		return;
+	}
+	
 	// setup the gdt pointer
 	gdt64_pointer.limit = sizeof(gdt) - 1;
 	gdt64_pointer.base = offset(gdt);
 
 	page_pml4t[0] = offset(&page_pdpt) | 3;
-	page_pml4t[510] = offset(&page_pdpt) | 3;
-	page_pml4t[511] = offset(&page_pml4t) | 3;
+	//TODO: Find out why this makes GCC crash when paging is enabled
+	/*page_pml4t[510] = offset(&page_pdpt) | 3;
+	page_pml4t[511] = offset(&page_pml4t) | 3;*/
 	page_pdpt[0] = offset(&page_pdt) | 3;
 	page_pdt[0] = offset(&page_pt) | 3;
 	
@@ -73,7 +92,7 @@ void setup_long_mode(void *multiboot)
 	
 	if(result < 0x80000001)
 	{
-		console_puts("Long mode is not supported (no extended flags was found)!");
+		error("Long mode is not supported (no extended flags was found)!");
 		return;
 	}
 
@@ -83,7 +102,7 @@ void setup_long_mode(void *multiboot)
 
 	if(!(result & long_mode_flag))
 	{
-		console_puts("Long mode is not supported (bit was not set)!");
+		error("Long mode is not supported (bit was not set)!");
 		return;
 	}
 

@@ -10,8 +10,11 @@ package = Package.new do
 	version '0.0.0'
 	
 	# setup toolchains
+	
 	set Toolchain::Architecture, Arch::X86_64
 	set Toolchain::Optimization, :balanced
+	set Toolchain::Exceptions, :none
+	set Toolchain::MergeConstants, false # this seems bugged
 	
 	set Arch::RedZone, false
 	set Arch::FreeStanding, true
@@ -64,6 +67,7 @@ package = Package.new do
 	files.merge(Executable).name('build/kernel64.elf', false)
 	
 	Builder.execute 'bin/mbchk', output
+	Builder.execute 'bin/inject',  'test/grub/grub.img', 'test/test.img', output, 'system\\kernel.elf'
 end
 
 desc "Build Avery"
@@ -74,13 +78,12 @@ end
 desc "Test Avery with QEMU"
 task :test => :build do
 	Dir.chdir('test/qemu/') do
-		Builder.execute *%w{qemu-system-x86_64.exe -m 128 -kernel ./../../build/kernel.elf}
+		Builder.execute *%w{qemu-system-x86_64.exe -m 128 -fda ../../test/test.img}
 	end
 end
 
 desc "Test Avery with Bochs"
 task :bochs => :build do
-	Builder.execute 'bin/inject',  'test/grub/grub.img', 'test/test.img', output, 'system\\kernel.elf'
 	Dir.chdir('test') do
 		Builder.execute 'bochs', '-q'
 	end
