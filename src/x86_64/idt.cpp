@@ -43,6 +43,10 @@ extern "C" void Arch::isr_handler(const InterruptInfo &info)
 		handler(info);
 	else
 	{
+		uint64_t cr2;
+		
+		asm("mov %%cr2, %%rax" : "=a"(cr2)); 
+		
 		console.panic().s("Unhandled interrupt: ").u(info.interrupt_index).lb().lb().fg(Console::light_gray)
 			.s("ss:     ").x(info.ss).a()
 			.s("rsp:    ").x(info.prev_rsp).a()
@@ -58,6 +62,7 @@ extern "C" void Arch::isr_handler(const InterruptInfo &info)
 			.lb()
 			.s("rcx:    ").x(info.rcx).a()
 			.s("rdx:    ").x(info.rdx).a()
+			.s("cr2:    ").x(cr2).a()
 		.endl();
 	}
 }

@@ -82,9 +82,7 @@ void setup_long_mode(void *multiboot, uint32_t magic)
 	gdt64_pointer.base = offset(gdt);
 
 	page_pml4t[0] = offset(&page_pdpt) | 3;
-	//TODO: Find out why this makes GCC crash when paging is enabled
-	/*page_pml4t[510] = offset(&page_pdpt) | 3;
-	page_pml4t[511] = offset(&page_pml4t) | 3;*/
+	page_pml4t[510] = offset(&page_pml4t) | 3;
 	page_pdpt[0] = offset(&page_pdt) | 3;
 	page_pdt[0] = offset(&page_pt) | 3;
 	

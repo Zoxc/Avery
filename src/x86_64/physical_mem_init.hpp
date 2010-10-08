@@ -14,5 +14,10 @@ namespace Memory
 		};
 		
 		const size_t byte_map_size = 8 * Arch::page_size;
+		
+		namespace Initial
+		{
+			void initialize(const multiboot_t &info);
+		};
 	};
 };

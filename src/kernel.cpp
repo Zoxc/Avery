@@ -9,14 +9,9 @@ extern "C" void kernel(const multiboot_t &info)
 	
 	console.clear().s("Welcome to long mode!").endl();
 	
-	console.s("Multiboot information at ").x(&info).lb();
-	
 	Arch::initialize(info);
 	
-	if(!(info.flags & MULTIBOOT_FLAG_ELF))
-		console.panic().s("No ELF information passed!").endl();
+	console.s("Kernel is bored. Formating C:\\... (0%)").endl();
 	
-	console.s("elf header at ").x(info.addr).s(" - ").x(info.size).endl();
-	
-	asm volatile("int3");
+	Arch::panic();
 }

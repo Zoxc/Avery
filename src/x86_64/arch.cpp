@@ -1,11 +1,14 @@
 #include "arch.hpp"
-#include "physical_mem.hpp"
+#include "debug.hpp"
+#include "physical_mem_init.hpp"
 
 void Arch::initialize(const multiboot_t &info)
 {
 	initialize_idt();
 	
-	Memory::Physical::initialize(info);
+	Debug::initialize(info);
+	
+	Memory::Physical::Initial::initialize(info);
 }
 
 void Arch::panic()
