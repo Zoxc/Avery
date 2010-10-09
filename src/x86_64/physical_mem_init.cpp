@@ -5,43 +5,34 @@
 
 namespace Memory
 {
-	namespace Physical
+	namespace Initial
 	{
-		namespace Initial
+		struct ReservedEntry
 		{
-			extern "C"
-			{
-				extern void *kernel_start;
-				extern void *kernel_end;
-			};
+			ReservedEntry(size_t base, size_t size) : entry(base, size), found(false) {}
 			
-			struct ReservedEntry
-			{
-				ReservedEntry(size_t base, size_t size) : entry(base, size), found(false) {}
-				
-				InitialEntry entry;
-				bool found;
-			};
-			
-			// Functions to work with the initial memory map
-			
-			void load_memory_map(const multiboot_t &info);
-			void punch_holes(ReservedEntry *holes[], size_t hole_count);
-			void align_holes();
-			InitialEntry *find_biggest_entry();
-			
-			InitialEntry *list;
-			size_t overhead;
-			
-			// The temporary allocator
-			
-			InitialEntry *entry;
-			size_t current;
-		}
-	};
+			InitialEntry entry;
+			bool found;
+		};
+		
+		// Functions to work with the initial memory map
+		
+		void load_memory_map(const multiboot_t &info);
+		void punch_holes(ReservedEntry *holes[], size_t hole_count);
+		void align_holes();
+		InitialEntry *find_biggest_entry();
+		
+		InitialEntry *list;
+		size_t overhead;
+		
+		// The temporary allocator
+		
+		InitialEntry *entry;
+		size_t current;
+	}
 };
 
-void *Memory::Physical::Initial::allocate(size_t size, size_t alignment)
+void *Memory::Initial::allocate(size_t size, size_t alignment)
 {
 	size_t result = align(current, alignment);
 	
@@ -52,7 +43,7 @@ void *Memory::Physical::Initial::allocate(size_t size, size_t alignment)
 	return (void *)result;
 }
 
-void Memory::Physical::Initial::load_memory_map(const multiboot_t &info)
+void Memory::Initial::load_memory_map(const multiboot_t &info)
 {
 	list = 0;
 	
@@ -72,7 +63,7 @@ void Memory::Physical::Initial::load_memory_map(const multiboot_t &info)
 	}
 }
 
-void Memory::Physical::Initial::punch_holes(ReservedEntry *holes[], size_t hole_count)
+void Memory::Initial::punch_holes(ReservedEntry *holes[], size_t hole_count)
 {
 	InitialEntry *entry = list;
 	InitialEntry *prev = entry;
@@ -147,7 +138,7 @@ void Memory::Physical::Initial::punch_holes(ReservedEntry *holes[], size_t hole_
 	}
 }
 
-void Memory::Physical::Initial::align_holes()
+void Memory::Initial::align_holes()
 {
 	InitialEntry *entry = list;
 	InitialEntry *prev = entry;
@@ -173,7 +164,7 @@ void Memory::Physical::Initial::align_holes()
 	}
 }
 
-Memory::Physical::Initial::InitialEntry *Memory::Physical::Initial::find_biggest_entry()
+Memory::Initial::InitialEntry *Memory::Initial::find_biggest_entry()
 {
 	InitialEntry *result = 0;
 	
@@ -193,7 +184,7 @@ Memory::Physical::Initial::InitialEntry *Memory::Physical::Initial::find_biggest
 	return result;
 }
 
-void Memory::Physical::Initial::initialize(const multiboot_t &info)
+void Memory::Initial::initialize_phsyical(const multiboot_t &info)
 {
 	// Make sure we have the required multiboot flags
 	assert(info.flags & MULTIBOOT_FLAG_MMAP, "No memory map passed!");
@@ -207,7 +198,7 @@ void Memory::Physical::Initial::initialize(const multiboot_t &info)
 	size_t reserved_hole_count = 0;
 	ReservedEntry *reserved_holes[3];
 	
-	ReservedEntry kernel_hole((size_t)&kernel_start - kernel_location, (size_t)&kernel_end - kernel_location);
+	ReservedEntry kernel_hole(symbol_to_phsyical(&kernel_start), symbol_to_phsyical(&kernel_end));
 	
 	reserved_holes[reserved_hole_count++] = &kernel_hole;
 	

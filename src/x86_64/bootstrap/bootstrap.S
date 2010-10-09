@@ -18,9 +18,6 @@ loop.32:
 
 .global bootstrap.64
 bootstrap.64:
-	# Reset the stack
-	movabs $(stack + 0x4000), %rsp
-	
 	# Load data segments
 	movw $0x10, %ax
 	movw %ax, %ds
@@ -31,9 +28,9 @@ bootstrap.64:
 	# Zero the upper bits of %rcx
 	#andq $0xFFFFFFFF, %rcx
 	
-	# Call kernel
+	# Call the higher-half entry
 	mov %rcx, %rdi
-	movabs $kernel, %rax
+	movabs $entry, %rax
 	call *%rax
 
 loop.64:

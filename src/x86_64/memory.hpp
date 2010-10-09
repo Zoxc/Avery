@@ -5,12 +5,20 @@
 
 namespace Memory
 {
-	typedef uint64_t table_t[512] __attribute__((aligned(0x1000)));
+	extern "C"
+	{
+		extern void *kernel_start;
+		extern void *kernel_end;
+	};
 	
-	const size_t pt_size = 512 * sizeof(size_t);
-	const size_t pdt_size = 512 * pt_size;
-	const size_t pdpt_size = 512 * pdt_size;
-	const size_t pml4t_size = 512 * pdpt_size;
+	const size_t table_entries = 512;
+	
+	typedef uint64_t table_t[table_entries] __attribute__((aligned(0x1000)));
+	
+	const size_t pt_size = table_entries * Arch::page_size;
+	const size_t pdt_size = table_entries * pt_size;
+	const size_t pdpt_size = table_entries * pdt_size;
+	const size_t pml4t_size = table_entries * pdpt_size;
 	
 	const size_t upper_half_start = 0xFFFF800000000000;
 	const size_t lower_half_end = 0x0000800000000000;
@@ -25,6 +33,19 @@ namespace Memory
 	{
 		return (size_t)pointer;
 	}
-
-	void initialize();
+	
+	static inline size_t symbol_to_phsyical(const void *pointer)
+	{
+		return (size_t)pointer - kernel_location;
+	}
+	
+	namespace Initial
+	{
+		void initialize();
+	};
+	
+	static inline void load_pml4(size_t pml4t)
+	{
+		asm volatile ("mov %%rax, %%cr3" :: "a"(pml4t));
+	}
 };

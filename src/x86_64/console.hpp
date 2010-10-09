@@ -1,5 +1,6 @@
 #pragma once
 #include "../common.hpp"
+#include "memory.hpp"
 
 class Console
 {
@@ -52,6 +53,9 @@ public:
 	Console &c(const char c);
 	Console &s(const char *str);
 	
+	static uint16_t *const vga;
+	
+	static const unsigned max_chars = 2000;
 private:
 	uint8_t x_offset;
 	uint8_t y_offset;
@@ -69,7 +73,6 @@ private:
 	
 	static const char digits[];
 
-	static const unsigned max_chars;
 	static const unsigned size_x;
 	static const unsigned size_y;
 	
@@ -78,8 +81,6 @@ private:
 	
 	static const unsigned max_x;
 	static const unsigned max_y;
-	
-	static uint16_t *const vga;
 };
 
 extern Console console;

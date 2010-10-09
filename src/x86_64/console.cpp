@@ -1,6 +1,7 @@
 #include "console.hpp"
 #include "arch.hpp"
 #include "io.hpp"
+#include "memory.hpp"
 
 Console console;
 
@@ -21,8 +22,8 @@ const Console::Color Console::light_magenta = {13};
 const Console::Color Console::yellow = {14};
 const Console::Color Console::white = {15};
 
-const unsigned Console::max_chars = 2000;
-
+uint16_t *const Console::vga = (uint16_t *)(Memory::kernel_location + 0xb8000);
+	
 const unsigned Console::size_x = 80;
 const unsigned Console::size_y = 25;
 	
@@ -33,8 +34,6 @@ const unsigned Console::max_x = 79;
 const unsigned Console::max_y = 25;
 
 void (*Console::flush_line)() = 0;
-
-uint16_t *const Console::vga = (uint16_t *)0xb8000;
 
 Console::Console() : x_offset(min_x), y_offset(min_y), hex_fg(&light_green)
 {

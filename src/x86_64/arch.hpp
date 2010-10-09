@@ -4,33 +4,6 @@
 
 namespace Arch
 {
-	struct IDTEntry
-	{
-		uint8_t data[16];
-	} __attribute__((packed));
-	
-	struct InterruptGate
-	{
-		uint16_t base_low;
-		uint16_t segment_selector;
-		uint8_t ist_reserved0;
-
-		unsigned int type : 4;
-		unsigned int zero: 1;
-		unsigned int privilege_level : 2;
-		unsigned int present : 1;
-
-		uint16_t base_medium;
-		uint32_t base_high;
-		uint64_t reserved1;
-	} __attribute__((packed));
-	
-	struct IDTPointer
-	{
-		uint16_t limit;
-		IDTEntry *base;
-	} __attribute__((packed));
-	
 	struct InterruptInfo
 	{
 		uint64_t ds;                  // Data segment selector
@@ -48,6 +21,8 @@ namespace Arch
 	void register_interrupt_handler(uint8_t index, interrupt_handler_t handler);
 	
 	void initialize_idt();
+	void initialize_gdt();
+	
 	void initialize(const multiboot_t &info);
 	void panic();
 };

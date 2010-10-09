@@ -5,59 +5,51 @@
 
 namespace Memory
 {
-	namespace Physical
+	namespace Initial
 	{
-		struct Hole
+		struct InitialEntry
 		{
-			size_t base;
-			size_t size;
-		};
-		
-		const size_t byte_map_size = 8 * Arch::page_size;
-		
-		namespace Initial
-		{
-			struct InitialEntry
+			union
 			{
-				union
-				{
-					uint32_t next_low;
-					uint32_t struct_size;
-				};
-				
-				uint64_t base;
-				
-				union
-				{
-					uint64_t size;
-					uint64_t end;
-				};
-				
-				union
-				{
-					uint32_t next_high;
-					uint32_t type;
-				};
-				
-				InitialEntry(size_t base, size_t size) : base(base), size(size) {}
-				
-				InitialEntry *get_next()
-				{
-					return (InitialEntry *)((uint64_t)next_high << 32 | next_low);
-				}
-				
-				void set_next(InitialEntry *next)
-				{
-					uint64_t next_entry = (uint64_t)next;
-					next_low = next_entry & 0xFFFFFFFF;
-					next_high = next_entry >> 32;
-				};
-			} __attribute__((packed));
+				uint32_t next_low;
+				uint32_t struct_size;
+			};
 			
-			extern InitialEntry *entry;
+			uint64_t base;
 			
-			void initialize(const multiboot_t &info);
-			void *allocate(size_t size, size_t alignment);
-		};
+			union
+			{
+				uint64_t size;
+				uint64_t end;
+			};
+			
+			union
+			{
+				uint32_t next_high;
+				uint32_t type;
+			};
+			
+			InitialEntry(size_t base, size_t size) : base(base), size(size) {}
+			
+			InitialEntry *get_next()
+			{
+				return (InitialEntry *)((uint64_t)next_high << 32 | next_low);
+			}
+			
+			void set_next(InitialEntry *next)
+			{
+				uint64_t next_entry = (uint64_t)next;
+				next_low = next_entry & 0xFFFFFFFF;
+				next_high = next_entry >> 32;
+			};
+		} __attribute__((packed));
+		
+		extern InitialEntry *list;
+		extern size_t overhead;
+		
+		extern InitialEntry *entry;
+		
+		void initialize_phsyical(const multiboot_t &info);
+		void *allocate(size_t size, size_t alignment);
 	};
 };

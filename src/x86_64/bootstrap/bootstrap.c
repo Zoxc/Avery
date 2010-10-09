@@ -11,13 +11,10 @@ const struct multiboot_header header __attribute__ ((section (".multiboot"))) = 
 typedef uint64_t table_t[512] __attribute__((aligned(0x1000)));
 	
 static table_t pdpt_low;
-static table_t pdt_low;
-
-static table_t pml4t_high;
 static table_t pdpt_high;
-static table_t pdt_high;
 
 static table_t pml4t;
+static table_t pdt;
 static table_t pt;
 
 struct descriptor
@@ -90,13 +87,13 @@ void setup_long_mode(void *multiboot, uint32_t magic)
 	
 	// setup the higher-half
 	pml4t[511] = offset(&pdpt_high) | 3;
-	pdpt_high[510] = offset(&pdt_high) | 3;
-	pdt_high[0] = offset(&pt) | 3;
+	pdpt_high[510] = offset(&pdt) | 3;
 	
 	// setup the lower-half
 	pml4t[0] = offset(&pdpt_low) | 3;
-	pdpt_low[0] = offset(&pdt_low) | 3;
-	pdt_low[0] = offset(&pt) | 3;
+	pdpt_low[0] = offset(&pdt) | 3;
+	
+	pdt[0] = offset(&pt) | 3;
 	
 	// map pml4t to itself
 	pml4t[510] = offset(&pml4t) | 3;
@@ -135,7 +132,7 @@ void setup_long_mode(void *multiboot, uint32_t magic)
 	asm volatile ("lgdt %0" :: "m"(gdt64_pointer));
 	
 	// load PML4T into CR3
-	asm volatile ("movl %%eax, %%cr3" :: "a" (&pml4t));
+	asm volatile ("movl %%eax, %%cr3" :: "a"(&pml4t));
 	
 	// set the long mode bit
 	asm volatile ("rdmsr; orl %0, %%eax; wrmsr" :: "i"(1 << 8), "c"(0xC0000080) : "eax", "edx");
