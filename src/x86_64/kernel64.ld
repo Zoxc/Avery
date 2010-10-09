@@ -4,16 +4,24 @@ SECTIONS
 {
 	. = 0x100000;
 	
-	kernel_start = .;
-	
 	.multiboot : { *(.multiboot) }
 	
-	.text : {
+	.bootstrap :
+	{
+		cache/src/x86_64/bootstrap/*(.text .rodata .data .bss)
+	}
+	
+	. = ALIGN(4096);
+	. += 0xFFFFFF8000000000;
+	
+	kernel_start = .;
+	
+	.text ALIGN(4096) : AT(ADDR(.text) - 0xFFFFFF8000000000) {
 		*(.text)
 		*(.gnu.linkonce.t*)
 	}
 	
-	.rodata ALIGN(4096) :
+	.rodata ALIGN(4096) : AT(ADDR(.rodata) - 0xFFFFFF8000000000)
 	{
 		ctors_start = .;
 		*(.ctor*)
@@ -23,19 +31,17 @@ SECTIONS
 		*(.gnu.linkonce.r*)
 	}
 	
-	.data :
+	.data ALIGN(4096) : AT(ADDR(.data) - 0xFFFFFF8000000000)
 	{
 		*(.data)
 		*(.gnu.linkonce.d*)
 	}
 	
-	.bss :
+	.bss ALIGN(4096) : AT(ADDR(.bss) - 0xFFFFFF8000000000)
 	{
 		*(.bss)
 		*(.gnu.linkonce.b*)
 	}
 	
 	kernel_end = .;
-	
-	. += 0xFFFFFF0000000000;
 }

@@ -15,40 +15,6 @@ namespace Memory
 				extern void *kernel_end;
 			};
 			
-			struct InitialEntry
-			{
-				union
-				{
-					uint32_t next_low;
-					uint32_t struct_size;
-				};
-				uint64_t base;
-				union
-				{
-					uint64_t size;
-					uint64_t end;
-				};
-				union
-				{
-					uint32_t next_high;
-					uint32_t type;
-				};
-				
-				InitialEntry(size_t base, size_t size) : base(base), size(size) {}
-				
-				InitialEntry *get_next()
-				{
-					return (InitialEntry *)((uint64_t)next_high << 32 | next_low);
-				}
-				
-				void set_next(InitialEntry *next)
-				{
-					uint64_t next_entry = (uint64_t)next;
-					next_low = next_entry & 0xFFFFFFFF;
-					next_high = next_entry >> 32;
-				};
-			} __attribute__((packed));
-			
 			struct ReservedEntry
 			{
 				ReservedEntry(size_t base, size_t size) : entry(base, size), found(false) {}
@@ -64,27 +30,18 @@ namespace Memory
 			void align_holes();
 			InitialEntry *find_biggest_entry();
 			
-			extern InitialEntry *list;
-			extern size_t overhead;
+			InitialEntry *list;
+			size_t overhead;
 			
 			// The temporary allocator
 			
-			extern InitialEntry *entry;
-			extern size_t current;
-			
-			size_t allocate(size_t size, size_t alignment);
+			InitialEntry *entry;
+			size_t current;
 		}
 	};
 };
 
-Memory::Physical::Initial::InitialEntry *Memory::Physical::Initial::list;
-size_t Memory::Physical::Initial::overhead;
-
-Memory::Physical::Initial::InitialEntry *Memory::Physical::Initial::entry;
-
-size_t Memory::Physical::Initial::current;
-
-size_t Memory::Physical::Initial::allocate(size_t size, size_t alignment)
+void *Memory::Physical::Initial::allocate(size_t size, size_t alignment)
 {
 	size_t result = align(current, alignment);
 	
@@ -92,7 +49,7 @@ size_t Memory::Physical::Initial::allocate(size_t size, size_t alignment)
 	
 	assert(current <= entry->end);
 	
-	return result;
+	return (void *)result;
 }
 
 void Memory::Physical::Initial::load_memory_map(const multiboot_t &info)
@@ -250,7 +207,7 @@ void Memory::Physical::Initial::initialize(const multiboot_t &info)
 	size_t reserved_hole_count = 0;
 	ReservedEntry *reserved_holes[3];
 	
-	ReservedEntry kernel_hole((size_t)&kernel_start, (size_t)&kernel_end);
+	ReservedEntry kernel_hole((size_t)&kernel_start - kernel_memory, (size_t)&kernel_end - kernel_memory);
 	
 	reserved_holes[reserved_hole_count++] = &kernel_hole;
 	

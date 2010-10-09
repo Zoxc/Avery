@@ -1,6 +1,6 @@
 .code32
 .align 16
-.global stack
+.local stack
 .comm stack, 0x4000
 
 .global bootstrap.32
@@ -33,7 +33,9 @@ bootstrap.64:
 	
 	# Call kernel
 	mov %rcx, %rdi
-	call kernel
+	movabs $kernel, %rax
+	call *%rax
+
 loop.64:
 	hlt
 	jmp loop.64
