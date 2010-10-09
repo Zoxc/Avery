@@ -12,16 +12,16 @@ SECTIONS
 	}
 	
 	. = ALIGN(4096);
-	. += 0xFFFFFF8000000000;
+	. += 0xFFFFFFFF80000000;
 	
 	kernel_start = .;
 	
-	.text ALIGN(4096) : AT(ADDR(.text) - 0xFFFFFF8000000000) {
+	.text ALIGN(4096) : AT(ADDR(.text) - 0xFFFFFFFF80000000) {
 		*(.text)
 		*(.gnu.linkonce.t*)
 	}
 	
-	.rodata ALIGN(4096) : AT(ADDR(.rodata) - 0xFFFFFF8000000000)
+	.rodata ALIGN(4096) : AT(ADDR(.rodata) - 0xFFFFFFFF80000000)
 	{
 		ctors_start = .;
 		*(.ctor*)
@@ -31,13 +31,13 @@ SECTIONS
 		*(.gnu.linkonce.r*)
 	}
 	
-	.data ALIGN(4096) : AT(ADDR(.data) - 0xFFFFFF8000000000)
+	.data ALIGN(4096) : AT(ADDR(.data) - 0xFFFFFFFF80000000)
 	{
 		*(.data)
 		*(.gnu.linkonce.d*)
 	}
 	
-	.bss ALIGN(4096) : AT(ADDR(.bss) - 0xFFFFFF8000000000)
+	.bss ALIGN(4096) : AT(ADDR(.bss) - 0xFFFFFFFF80000000)
 	{
 		*(.bss)
 		*(.gnu.linkonce.b*)

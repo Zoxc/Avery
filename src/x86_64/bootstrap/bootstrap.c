@@ -8,10 +8,17 @@ BOOTSTRAP_CODE
 
 const struct multiboot_header header __attribute__ ((section (".multiboot"))) = {MULTIBOOT_HEADER_MAGIC, MULTIBOOT_HEADER_FLAGS, MULTIBOOT_CHECKSUM(MULTIBOOT_HEADER_FLAGS)};
 
-static uint64_t page_pml4t[512] __attribute__((aligned(0x1000)));
-static uint64_t page_pdpt[512] __attribute__((aligned(0x1000)));
-static uint64_t page_pdt[512] __attribute__((aligned(0x1000)));
-static uint64_t page_pt[512] __attribute__((aligned(0x1000)));
+typedef uint64_t table_t[512] __attribute__((aligned(0x1000)));
+	
+static table_t pdpt_low;
+static table_t pdt_low;
+
+static table_t pml4t_high;
+static table_t pdpt_high;
+static table_t pdt_high;
+
+static table_t pml4t;
+static table_t pt;
 
 struct descriptor
 {
@@ -80,19 +87,25 @@ void setup_long_mode(void *multiboot, uint32_t magic)
 	// setup the gdt pointer
 	gdt64_pointer.limit = sizeof(gdt) - 1;
 	gdt64_pointer.base = offset(gdt);
-
-	page_pml4t[0] = offset(&page_pdpt) | 3;
-	page_pml4t[511] = offset(&page_pdpt) | 3;
-	page_pdpt[0] = offset(&page_pdt) | 3;
-	page_pdt[0] = offset(&page_pt) | 3;
 	
-	page_pml4t[510] = offset(&page_pml4t) | 3;
+	// setup the higher-half
+	pml4t[511] = offset(&pdpt_high) | 3;
+	pdpt_high[510] = offset(&pdt_high) | 3;
+	pdt_high[0] = offset(&pt) | 3;
+	
+	// setup the lower-half
+	pml4t[0] = offset(&pdpt_low) | 3;
+	pdpt_low[0] = offset(&pdt_low) | 3;
+	pdt_low[0] = offset(&pt) | 3;
+	
+	// map pml4t to itself
+	pml4t[510] = offset(&pml4t) | 3;
 	
 	// map the first 2 megabytes
 	unsigned int i, address = 0;
 	for(i = 0; i < 512; i++)
 	{
-		page_pt[i] = address | 3; // map address and mark it present/writable
+		pt[i] = address | 3; // map address and mark it present/writable
 		address += 0x1000;
 	}
 	
@@ -122,7 +135,7 @@ void setup_long_mode(void *multiboot, uint32_t magic)
 	asm volatile ("lgdt %0" :: "m"(gdt64_pointer));
 	
 	// load PML4T into CR3
-	asm volatile ("movl %%eax, %%cr3" :: "a" (&page_pml4t));
+	asm volatile ("movl %%eax, %%cr3" :: "a" (&pml4t));
 	
 	// set the long mode bit
 	asm volatile ("rdmsr; orl %0, %%eax; wrmsr" :: "i"(1 << 8), "c"(0xC0000080) : "eax", "edx");

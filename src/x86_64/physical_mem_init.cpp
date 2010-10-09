@@ -207,7 +207,7 @@ void Memory::Physical::Initial::initialize(const multiboot_t &info)
 	size_t reserved_hole_count = 0;
 	ReservedEntry *reserved_holes[3];
 	
-	ReservedEntry kernel_hole((size_t)&kernel_start - kernel_memory, (size_t)&kernel_end - kernel_memory);
+	ReservedEntry kernel_hole((size_t)&kernel_start - kernel_location, (size_t)&kernel_end - kernel_location);
 	
 	reserved_holes[reserved_hole_count++] = &kernel_hole;
 	

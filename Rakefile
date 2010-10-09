@@ -18,7 +18,7 @@ package = Package.new do
 	
 	set Arch::RedZone, false
 	set Arch::FreeStanding, true
-	set Arch::X86_64::MemoryModel, :large
+	set Arch::X86_64::MemoryModel, :kernel
 	set Arch::X86::MMX, false
 	set Arch::X86::SSE, false
 	set Arch::X86::SSE2, false
