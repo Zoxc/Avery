@@ -23,7 +23,7 @@ package = Package.new do
 	set Arch::X86::SSE, false
 	set Arch::X86::SSE2, false
 	
-	clang = true
+	clang = false
 	
 	set Toolchain::LLVM::Target, 'x86_64-unknown-linux-gnu'
 	use Toolchain::LLVM if clang
@@ -85,7 +85,7 @@ end
 desc "Test Avery with Bochs"
 task :bochs => :build do
 	Dir.chdir('test') do
-		Builder.execute 'bochs', '-q'
+		Builder.execute 'bochsdbg', '-q'
 	end
 end
 
