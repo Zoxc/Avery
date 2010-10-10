@@ -34,13 +34,15 @@ namespace Memory
 		return (size_t)pointer;
 	}
 	
-	static inline size_t symbol_to_phsyical(const void *pointer)
+	static inline size_t symbol_to_physical(const void *pointer)
 	{
 		return (size_t)pointer - kernel_location;
 	}
 	
 	namespace Initial
 	{
+		const size_t allocator_memory = kernel_location + pdt_size;
+		
 		void initialize();
 	};
 	

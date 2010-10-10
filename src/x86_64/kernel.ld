@@ -8,7 +8,7 @@ SECTIONS
 	
 	.bootstrap :
 	{
-		cache/src/x86_64/bootstrap/*(.text .rodata .data .bss)
+		cache/src/x86_64/bootstrap/*(.text .rodata* .data .bss)
 	}
 	
 	. = ALIGN(4096);

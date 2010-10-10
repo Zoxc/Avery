@@ -10,9 +10,15 @@ namespace Memory
 		struct Hole
 		{
 			size_t base;
-			size_t size;
+			size_t pages;
+			uint8_t *bitmap;
+			
+			void set(size_t index);
 		};
 		
-		const size_t byte_map_size = 8 * Arch::page_size;
+		const size_t pages_per_byte = 8;
+		const size_t byte_map_size = pages_per_byte * Arch::page_size;
+		
+		void initialize();
 	};
 };

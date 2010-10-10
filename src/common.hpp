@@ -28,7 +28,12 @@ typedef unsigned short uint16_t;
 typedef int int32_t;
 typedef unsigned uint32_t;
 typedef long long int64_t;
-typedef unsigned long long uint64_t;
+typedef unsigned long uint64_t;
+
+template<class T> static inline const T& min(const T& a, const T& b)
+{
+	return (a < b) ? a : b;
+}
 
 static inline size_t align(size_t value, size_t alignment)
 {

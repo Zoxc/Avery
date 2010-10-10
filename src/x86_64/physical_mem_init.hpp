@@ -7,7 +7,7 @@ namespace Memory
 {
 	namespace Initial
 	{
-		struct InitialEntry
+		struct Entry
 		{
 			union
 			{
@@ -29,27 +29,18 @@ namespace Memory
 				uint32_t type;
 			};
 			
-			InitialEntry(size_t base, size_t size) : base(base), size(size) {}
+			Entry(size_t base, size_t size);
 			
-			InitialEntry *get_next()
-			{
-				return (InitialEntry *)((uint64_t)next_high << 32 | next_low);
-			}
+			Entry *get_next();
 			
-			void set_next(InitialEntry *next)
-			{
-				uint64_t next_entry = (uint64_t)next;
-				next_low = next_entry & 0xFFFFFFFF;
-				next_high = next_entry >> 32;
-			};
+			void set_next(Entry *next);
 		} __attribute__((packed));
 		
-		extern InitialEntry *list;
+		extern Entry *list;
+		
+		extern Entry *entry;
 		extern size_t overhead;
 		
-		extern InitialEntry *entry;
-		
-		void initialize_phsyical(const multiboot_t &info);
-		void *allocate(size_t size, size_t alignment);
+		void initialize_physical(const multiboot_t &info);
 	};
 };

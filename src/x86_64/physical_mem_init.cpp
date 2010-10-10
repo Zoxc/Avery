@@ -1,4 +1,6 @@
+#include "../common.hpp"
 #include "physical_mem_init.hpp"
+#include "physical_mem.hpp"
 #include "memory.hpp"
 #include "console.hpp"
 #include "debug.hpp"
@@ -11,7 +13,7 @@ namespace Memory
 		{
 			ReservedEntry(size_t base, size_t size) : entry(base, size), found(false) {}
 			
-			InitialEntry entry;
+			Entry entry;
 			bool found;
 		};
 		
@@ -20,35 +22,35 @@ namespace Memory
 		void load_memory_map(const multiboot_t &info);
 		void punch_holes(ReservedEntry *holes[], size_t hole_count);
 		void align_holes();
-		InitialEntry *find_biggest_entry();
+		Entry *find_biggest_entry();
 		
-		InitialEntry *list;
+		Entry *list;
 		size_t overhead;
 		
-		// The temporary allocator
-		
-		InitialEntry *entry;
-		size_t current;
+		Entry *entry; // The entry used to store allocator data
 	}
 };
 
-void *Memory::Initial::allocate(size_t size, size_t alignment)
+Memory::Initial::Entry::Entry(size_t base, size_t size) : base(base), size(size) {}
+
+Memory::Initial::Entry *Memory::Initial::Entry::get_next()
 {
-	size_t result = align(current, alignment);
-	
-	current = result + size;
-	
-	assert(current <= entry->end);
-	
-	return (void *)result;
+	return (Entry *)((uint64_t)next_high << 32 | next_low);
 }
+
+void Memory::Initial::Entry::set_next(Entry *next)
+{
+	uint64_t next_entry = (uint64_t)next;
+	next_low = next_entry & 0xFFFFFFFF;
+	next_high = next_entry >> 32;
+};
 
 void Memory::Initial::load_memory_map(const multiboot_t &info)
 {
 	list = 0;
 	
-	InitialEntry *entry = (InitialEntry *)info.mmap_addr;
-	InitialEntry *end = (InitialEntry *)(info.mmap_addr + info.mmap_length);
+	Entry *entry = (Entry *)info.mmap_addr;
+	Entry *end = (Entry *)(info.mmap_addr + info.mmap_length);
 	
 	while(entry != end)
 	{
@@ -65,8 +67,8 @@ void Memory::Initial::load_memory_map(const multiboot_t &info)
 
 void Memory::Initial::punch_holes(ReservedEntry *holes[], size_t hole_count)
 {
-	InitialEntry *entry = list;
-	InitialEntry *prev = entry;
+	Entry *entry = list;
+	Entry *prev = entry;
 	
 	while(entry)
 	{
@@ -140,8 +142,8 @@ void Memory::Initial::punch_holes(ReservedEntry *holes[], size_t hole_count)
 
 void Memory::Initial::align_holes()
 {
-	InitialEntry *entry = list;
-	InitialEntry *prev = entry;
+	Entry *entry = list;
+	Entry *prev = entry;
 	
 	while(entry)
 	{
@@ -164,11 +166,11 @@ void Memory::Initial::align_holes()
 	}
 }
 
-Memory::Initial::InitialEntry *Memory::Initial::find_biggest_entry()
+Memory::Initial::Entry *Memory::Initial::find_biggest_entry()
 {
-	InitialEntry *result = 0;
+	Entry *result = 0;
 	
-	for(InitialEntry *entry = list; entry; entry = entry->get_next())
+	for(Entry *entry = list; entry; entry = entry->get_next())
 	{
 		if(result)
 		{
@@ -184,7 +186,7 @@ Memory::Initial::InitialEntry *Memory::Initial::find_biggest_entry()
 	return result;
 }
 
-void Memory::Initial::initialize_phsyical(const multiboot_t &info)
+void Memory::Initial::initialize_physical(const multiboot_t &info)
 {
 	// Make sure we have the required multiboot flags
 	assert(info.flags & MULTIBOOT_FLAG_MMAP, "No memory map passed!");
@@ -198,7 +200,7 @@ void Memory::Initial::initialize_phsyical(const multiboot_t &info)
 	size_t reserved_hole_count = 0;
 	ReservedEntry *reserved_holes[3];
 	
-	ReservedEntry kernel_hole(symbol_to_phsyical(&kernel_start), symbol_to_phsyical(&kernel_end));
+	ReservedEntry kernel_hole(symbol_to_physical(&kernel_start), symbol_to_physical(&kernel_end));
 	
 	reserved_holes[reserved_hole_count++] = &kernel_hole;
 	
@@ -224,10 +226,24 @@ void Memory::Initial::initialize_phsyical(const multiboot_t &info)
 		console.panic().s("No usable memory found after removing non-page aligned holes!").endl();
 	
 	entry = find_biggest_entry();
-	current = entry->base;
 	
 	console.s("Storing allocator data from ").x(entry->base).s(" - ").x(entry->end).lb();
 	
-	for(InitialEntry *entry = list; entry; entry = entry->get_next())
-		console.s("- Hole ").x(entry->base).s(" - ").x(entry->end).lb();
+	overhead = 0;
+	
+	for(Entry *entry = list; entry; entry = entry->get_next())
+	{
+		overhead += sizeof(Physical::Hole) + align(entry->end - entry->base, Physical::byte_map_size) / Physical::byte_map_size;
+		
+		console.s("- Hole @ ").x(entry).s(" : ").x(entry->base).s(" - ").x(entry->end).lb();
+	}
+	
+	assert(overhead <= pt_size, "Memory map doesn't fit in 2 MB.");
+	
+	console.s("Overhead is ").x(overhead).s(" bytes").lb();
+	
+	for(Entry *entry = list; entry; entry = entry->get_next())
+	{
+		console.s("- Hole0 @ ").x(entry).s(" : ").x(entry->next_low).s(" - ").x(entry->get_next()).lb();
+	}
 }
