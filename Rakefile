@@ -23,8 +23,8 @@ task :build do
 		case File.extname(source)
 			when '.S'
 				puts "Assembling #{source}..."
-				assembly = "build/src/#{source}.s"
-				object_file = "build/src/#{source}.o"
+				assembly = "build/#{source}.s"
+				object_file = "build/#{source}.o"
 				FileUtils.makedirs(File.dirname(assembly))
 				execute 'clang', '-E', source, '-o', assembly
 				execute 'x86_64-elf-as', assembly, '-o', object_file
@@ -32,7 +32,7 @@ task :build do
 				objects << object_file
 			when '.cpp'
 				puts "Compiling #{source}..."
-				bitcode = "build/src/#{source}.o"
+				bitcode = "build/#{source}.o"
 				FileUtils.makedirs(File.dirname(bitcode))
 				execute 'clang', '-std=gnu++11', '-target', 'x86_64-generic-generic', '-emit-llvm', '-c', '-ffreestanding', '-Wall', '-fno-exceptions', '-fno-unwind-tables', '-Os', source, '-o', bitcode
 				bitcodes << bitcode
