@@ -1,91 +1,57 @@
-require_relative '../reno-0.2/reno'
+require 'fileutils'
 
-include Reno
-
-output = 'build/kernel.elf'
-
-package = Package.new do
-	# name and version
-	name 'Avery'
-	version '0.0.0'
-	
-	# setup toolchains
-	
-	set Toolchain::Architecture, Arch::X86_64
-	set Toolchain::Optimization, :balanced
-	set Toolchain::Exceptions, :none
-	set Toolchain::MergeConstants, false # this seems bugged
-	
-	set Arch::RedZone, false
-	set Arch::FreeStanding, true
-	set Arch::X86_64::MemoryModel, :kernel
-	set Arch::X86::MMX, false
-	set Arch::X86::SSE, false
-	set Arch::X86::SSE2, false
-	
-	clang = false
-	
-	set Toolchain::LLVM::Target, 'x86_64-unknown-linux-gnu'
-	use Toolchain::LLVM if clang
-	
-	set Toolchain::GNU::Prefix, 'x86_64-elf-'
-	set Toolchain::GNU::Linker::Script, 'src/x86_64/kernel.ld'
-	set Toolchain::GNU::Linker::PageSize, 0x1000
-	use Toolchain::GNU::Assembler
-	use Toolchain::GNU::Linker
-	
-	unless clang
-		use Toolchain::GNU::Compiler
-		use Toolchain::GNU::Compiler::Preprocessor
+def execute(command, *args)
+	#puts [command, *args].join(' ')
+	IO.popen([command, *args]) do |f|
+		print f.read
 	end
-	
-	# languages
-	use Assembly::WithCPP
-	c = use Languages::C
-	c.std 'c99'
-	cxx = use Languages::CXX
-	cxx.std 'c++0x'
-	
-	# files
-	boot = collect('src/x86_64/bootstrap/*') do
-		set Toolchain::Architecture, Arch::X86
-		set Toolchain::LLVM::Target, 'x86-unknown-linux-gnu'
-	end
-	
-	# convert to an object file to preserve settings
-	# boot = boot.convert(ObjectFile)
-	
-	files = boot & collect('src/**/*') # merge collection, prefer nodes in at the left side
-	
-	# convert all files to assembly for debugging purposes
-	files = files.convert(Assembly)
-	
-	files.merge(Executable).name(output, false)
-	
-	# output a seperate 64-bit ELF for debugging purposes
-	set Toolchain::GNU::Linker::Script, 'src/x86_64/kernel64.ld'
-	files.merge(Executable).name('build/kernel64.elf', false)
-	
-	Builder.execute 'bin/mbchk', output
-	Builder.execute 'bin/inject',  'test/grub/grub.img', 'test/test.img', output, 'system\\kernel.elf'
+	raise "#{command} failed with error code #{$?.exitstatus}" if $?.exitstatus != 0
 end
 
+kernel_binary = 'build/kernel.elf'
+	
 desc "Build Avery"
 task :build do
-	package.run
+	kernel_bitcode = 'build/kernel.bc'
+	kernel_object = 'build/kernel.o'
+	sources = Dir['src/**/*']
+	bitcodes = []
+	objects = ['font.o', kernel_object]
+	
+	sources.map do |source|
+		ext = File.extname(source)
+		case File.extname(source)
+			when '.S'
+				puts "Assembling #{source}..."
+				assembly = "build/src/#{source}.s"
+				object_file = "build/src/#{source}.o"
+				FileUtils.makedirs(File.dirname(assembly))
+				execute 'clang', '-E', source, '-o', assembly
+				execute 'x86_64-elf-as', assembly, '-o', object_file
+				
+				objects << object_file
+			when '.cpp'
+				puts "Compiling #{source}..."
+				bitcode = "build/src/#{source}.o"
+				FileUtils.makedirs(File.dirname(bitcode))
+				execute 'clang', '-std=gnu++11', '-target', 'x86_64-generic-generic', '-emit-llvm', '-c', '-ffreestanding', '-Wall', '-fno-exceptions', '-fno-unwind-tables', '-Os', source, '-o', bitcode
+				bitcodes << bitcode
+		end
+	end
+	
+	puts "Linking..."
+				
+	execute 'llvm-link', *bitcodes, "-o=#{kernel_object}"
+	execute 'llc', kernel_object, '-filetype=obj', '-disable-red-zone', '-code-model=kernel', '-relocation-model=static', '-mattr=-sse,-sse2,-mmx', '-O1', '-o', kernel_object
+	execute 'x86_64-elf-ld', '-z', 'max-page-size=0x1000', '-T', 'src/x86_64/kernel.ld', *objects, '-o', kernel_binary
 end
 
 desc "Test Avery with QEMU"
 task :test => :build do
-	Dir.chdir('test/qemu/') do
-		Builder.execute *%w{qemu-system-x86_64.exe -m 128 -fda ../../test/test.img}
-	end
-end
-
-desc "Test Avery with Bochs"
-task :bochs => :build do
-	Dir.chdir('test') do
-		Builder.execute 'bochsdbg', '-q'
+	Dir.chdir('emu/') do
+		FileUtils.cp "../#{kernel_binary }", "hda/efi/boot"
+		puts "Running QEMU..."
+		execute *%w{qemu/qemu-system-x86_64 -L . -bios OVMF.fd -hda fat:hda -d int,cpu_reset}
 	end
 end
 

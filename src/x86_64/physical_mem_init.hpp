@@ -1,6 +1,5 @@
 #pragma once
 #include "../common.hpp"
-#include "../multiboot.hpp"
 #include "arch.hpp"
 
 namespace Memory
@@ -41,6 +40,6 @@ namespace Memory
 		extern Entry *entry;
 		extern size_t overhead;
 		
-		void initialize_physical(const multiboot_t &info);
+		void initialize_physical();
 	};
 };

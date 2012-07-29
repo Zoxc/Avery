@@ -1,5 +1,5 @@
 #include "arch.hpp"
-#include "console.hpp"
+#include "../console.hpp"
 #include "io.hpp"
 
 namespace Arch
@@ -75,21 +75,23 @@ extern "C" void Arch::isr_handler(const InterruptInfo &info)
 		asm("mov %%cr2, %%rax" : "=a"(cr2)); 
 		
 		console.panic().s("Unhandled interrupt: ").u(info.interrupt_index).lb().lb().fg(Console::light_gray)
-			.s("ss:     ").x(info.ss).a()
-			.s("rsp:    ").x(info.prev_rsp).a()
-			.s("rflags: ").x(info.rflags).a()
-			.lb()
-			.s("cs:     ").x(info.cs).a()
-			.s("ds:     ").x(info.ds).a()
-			.s("indx:   ").x(info.interrupt_index).a()
-			.lb()
 			.s("errnr:  ").x(info.error_code).a()
+			.s("indx:   ").x(info.interrupt_index).a()
+			.lb().lb()
+			.s("rsp:    ").x(info.prev_rsp).a()
 			.s("rip:    ").x(info.rip).a()
+			.lb().lb()
 			.s("rax:    ").x(info.rax).a()
-			.lb()
+			.s("cr2:    ").x(cr2).a()
+			.lb().lb()
 			.s("rcx:    ").x(info.rcx).a()
 			.s("rdx:    ").x(info.rdx).a()
-			.s("cr2:    ").x(cr2).a()
+			.lb().lb()
+			.s("ss:     ").x(info.ss).a()
+			.s("cs:     ").x(info.cs).a()
+			.lb().lb()
+			.s("ds:     ").x(info.ds).a()
+			.s("rflags: ").x(info.rflags).a()
 		.endl();
 	}
 }

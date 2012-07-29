@@ -1,6 +1,5 @@
 #pragma once
 #include "../common.hpp"
-#include "../multiboot.hpp"
 #include "arch.hpp"
 
 namespace Memory

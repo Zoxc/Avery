@@ -1,6 +1,6 @@
 #include "../lib.hpp"
+#include "../console.hpp"
 #include "debug.hpp"
-#include "console.hpp"
 
 namespace Debug
 {
@@ -25,19 +25,18 @@ const Debug::Symbol *Debug::symbols_end;
 const char *Debug::symbol_names;
 const char *Debug::symbol_names_end;
 
-void Debug::initialize(const multiboot_t &info)
+void Debug::initialize()
 {
-	if(!(info.flags & MULTIBOOT_FLAG_ELF))
-	{
-		console.s("No ELF information passed. Symbol information disabled.").endl();
-		return;
-	}
+	return;
 	
-	SectionHeader *headers = (SectionHeader *)info.addr;
+	SectionHeader *headers;
 	
-	uint32_t section_names = headers[info.shndx].addr;
+	size_t shndx;
+	size_t num;
 	
-	for(size_t i = 0; i < info.num; ++i)
+	uint32_t section_names = headers[shndx].addr;
+	
+	for(size_t i = 0; i < num; ++i)
 	{
 		const char *name = (const char *)(section_names + headers[i].name);
 		

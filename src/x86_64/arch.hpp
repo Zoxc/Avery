@@ -1,6 +1,5 @@
 #pragma once
 #include "../common.hpp"
-#include "../multiboot.hpp"
 
 namespace Arch
 {
@@ -23,6 +22,6 @@ namespace Arch
 	void initialize_idt();
 	void initialize_gdt();
 	
-	void initialize(const multiboot_t &info);
+	void initialize();
 	void panic();
 };

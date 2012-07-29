@@ -3,16 +3,16 @@
 #include "physical_mem.hpp"
 #include "physical_mem_init.hpp"
 #include "memory.hpp"
-#include "console.hpp"
+#include "../console.hpp"
 
-void Arch::initialize(const multiboot_t &info)
+void Arch::initialize()
 {
 	initialize_gdt();
 	initialize_idt();
 	
-	Debug::initialize(info);
-	
-	Memory::Initial::initialize_physical(info);
+	Debug::initialize();
+	return;
+	Memory::Initial::initialize_physical();
 	
 	for(Memory::Initial::Entry *entry = Memory::Initial::list; entry; entry = entry->get_next())
 		console.s("- Hole1 @ ").x(entry).s(" : ").x(entry->next_low).s(" - ").x(entry->get_next()).lb();

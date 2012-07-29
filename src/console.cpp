@@ -1,43 +1,63 @@
 #include "console.hpp"
-#include "arch.hpp"
-#include "io.hpp"
-#include "memory.hpp"
+#include "x86_64/boot.hpp"
+#include "lib.hpp"
 
 Console console;
 
 const Console::Color Console::black = {0};
-const Console::Color Console::blue = {1};
+const Console::Color Console::blue = {0};
 const Console::Color Console::green = {2};
 const Console::Color Console::cyan = {3};
 const Console::Color Console::red = {4};
 const Console::Color Console::magenta = {5};
 const Console::Color Console::brown = {6};
-const Console::Color Console::light_gray = {7};
+const Console::Color Console::light_gray = {0x5c5c5c};
 const Console::Color Console::dark_gray = {8};
 const Console::Color Console::light_blue = {9};
-const Console::Color Console::light_green = {10};
+const Console::Color Console::light_green = {0x364627};
 const Console::Color Console::light_cyan = {11};
-const Console::Color Console::light_red = {12};
+const Console::Color Console::light_red = {0x96492A};
 const Console::Color Console::light_magenta = {13};
 const Console::Color Console::yellow = {14};
-const Console::Color Console::white = {15};
-
-uint16_t *const Console::vga = (uint16_t *)(Memory::kernel_location + 0xb8000);
-	
-const unsigned Console::size_x = 80;
-const unsigned Console::size_y = 25;
-	
-const unsigned Console::min_x = 1;
-const unsigned Console::min_y = 1;
-	
-const unsigned Console::max_x = 79;
-const unsigned Console::max_y = 25;
+const Console::Color Console::white = {0x373737};
 
 void (*Console::flush_line)() = 0;
 
-Console::Console() : x_offset(min_x), y_offset(min_y), hex_fg(&light_green)
+Console::Console() : fg_color(0x49535C), bg_color(0xE6EAE3), hex_fg(&light_green)
 {
-	fg(light_gray).bg(black);
+	
+}
+
+void Console::initialize()
+{
+	auto params = Boot::parameters;
+	
+	frame = (color_t *)params->frame_buffer;
+	scanline = params->frame_buffer_scanline;
+	
+	size_t border = 50;
+	
+	min_x = 0;
+	min_y = 0;
+	
+	max_x = params->frame_buffer_width - border * 2;
+	max_x = max_x / font_width;
+	width = max_x * font_width;
+	max_x--;
+	
+	left = (params->frame_buffer_width - width) / 2;
+	
+	max_y = params->frame_buffer_height - border * 2;
+	max_y = max_y / font_height;
+	height = max_y * font_height;
+	max_y--;
+	
+	x_offset = min_x;
+	y_offset = min_y; 
+	
+	top = (params->frame_buffer_width - width) / 2;
+	
+	clear();
 }
 
 void Console::do_panic()
@@ -67,14 +87,14 @@ Console &Console::endl()
 
 Console &Console::fg(const Color &new_fg)
 {
-	color = new_fg.value | (color & 0xF0);
+	fg_color = new_fg.value;
 	
 	return *this;
 }
 
 Console &Console::bg(const Color &new_bg)
 {
-	color = (color & 0x0F) | new_bg.value << 4;
+	bg_color = new_bg.value;
 	
 	return *this;
 }
@@ -114,7 +134,7 @@ Console &Console::u(const unsigned long value)
 
 Console &Console::x(const unsigned long value)
 {
-	uint8_t temp = color;
+	color_t temp = fg_color;
 	
 	if(hex_fg)
 		fg(*hex_fg);
@@ -123,7 +143,7 @@ Console &Console::x(const unsigned long value)
 	
 	put_base_padding(value, 16, sizeof(value) * 2);
 	
-	color = temp;
+	fg_color = temp;
 	
 	return *this;
 }
@@ -159,25 +179,51 @@ void Console::put_base_padding(size_t value, size_t base, size_t min_size)
 
 void Console::update_cursor()
 {
-	uint16_t loc = y_offset * 80 + x_offset;
+	return;
+}
+
+extern "C" void *raw_bitmap_font;
+
+void Console::blit_char(size_t x, size_t y, uint8_t index, color_t color)
+{
+	uint8_t *row = ((uint8_t *)&raw_bitmap_font) + index * font_width;
+	uint8_t *row_stop = row + font_scanline * font_height;
+	color_t *pixel_row = frame + x + scanline * y;
 	
-	Arch::outb(0x3D4, 14);
-	Arch::outb(0x3D5, loc >> 8);
-	Arch::outb(0x3D4, 15);
-	Arch::outb(0x3D5, loc);
+	for(; row < row_stop; row += font_scanline, pixel_row += scanline)
+	{
+		uint8_t *bit = row;
+		color_t *pixel_stop = pixel_row + font_width;
+		
+		for(color_t *pixel = pixel_row; pixel < pixel_stop; ++bit, ++pixel)
+			if(*bit)
+				*pixel = color;
+	}
+}
+
+void Console::clear_frame(size_t x, size_t y, size_t width, size_t height)
+{
+	auto row = frame + scanline * y + x;
+	auto row_stop = row + scanline * height;
+	
+	for(auto row = frame; row < row_stop; row += scanline)
+	{
+		auto pixel_stop = row + width;
+		
+		for(auto pixel = row; pixel < pixel_stop; ++pixel)
+			*pixel = bg_color;
+	}
 }
 
 void Console::scroll()
 {
-	for (size_t i = 0; i < size_y * size_x; i++)
-	{
-		vga[i] = vga[i + 80];
-	}
+	auto row = frame + scanline * top + left;
+	auto row_stop = row + scanline * (height - font_height);
 	
-	for (size_t x = 0; x < size_x; x++)
-	{
-		*(vga + (size_y - 1) * 80 + x_offset) = ' ' | (color << 8);
-	}
+	for(; row < row_stop; row += scanline)
+		memcpy(row, row + scanline, width * sizeof(color_t));
+	
+	clear_frame(left, top + height - font_height, width, font_height);
 }
 
 void Console::newline()
@@ -215,8 +261,8 @@ Console &Console::c(const char c)
 			if(x_offset >= max_x)
 				newline();
 			
-			*(vga + y_offset * 80 + x_offset++) = (uint8_t)c | (color << 8);
-
+			blit_char(left + x_offset++ * font_width, top + y_offset * font_height, c, fg_color);
+			
 			update_cursor();
 			break;
 	}
@@ -240,9 +286,8 @@ Console &Console::s(const char *str)
 
 Console & Console::clear(void)
 {
-	for(uint16_t *pos = vga; pos < vga + max_chars; pos++)
-		*pos = ' ' | (color << 8);
-
+	clear_frame(0, 0, Boot::parameters->frame_buffer_width, Boot::parameters->frame_buffer_height);
+	
 	x_offset = min_x;
 	y_offset = min_y;
 	update_cursor();

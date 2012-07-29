@@ -22,6 +22,16 @@ void Runtime::initialize()
 	setup_ctors(&ctors_start, &ctors_end);
 }
 
+void memcpy(void *dst, const void *src, size_t size)
+{
+	uint8_t *d = (uint8_t *)dst;
+	const uint8_t *s = (const uint8_t *)src;
+	
+	for(size_t i = 0; i < size; ++i) {
+		 d[i] = s[i];
+	}
+}
+
 void *memset(void *ptr, int value, unsigned long num)
 {
 	uint8_t *dest = (uint8_t *)ptr;

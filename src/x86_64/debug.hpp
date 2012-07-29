@@ -1,6 +1,5 @@
 #pragma once
 #include "../common.hpp"
-#include "../multiboot.hpp"
 #include "arch.hpp"
 
 namespace Debug
@@ -21,5 +20,5 @@ namespace Debug
 	extern const char *symbol_names;
 	extern const char *symbol_names_end;
 	
-	void initialize(const multiboot_t &info);
+	void initialize();
 };

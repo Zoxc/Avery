@@ -2,7 +2,7 @@
 #include "physical_mem_init.hpp"
 #include "physical_mem.hpp"
 #include "memory.hpp"
-#include "console.hpp"
+#include "../console.hpp"
 #include "debug.hpp"
 
 namespace Memory
@@ -19,7 +19,7 @@ namespace Memory
 		
 		// Functions to work with the initial memory map
 		
-		void load_memory_map(const multiboot_t &info);
+		void load_memory_map();
 		void punch_holes(ReservedEntry *holes[], size_t hole_count);
 		void align_holes();
 		Entry *find_biggest_entry();
@@ -45,8 +45,8 @@ void Memory::Initial::Entry::set_next(Entry *next)
 	next_high = next_entry >> 32;
 };
 
-void Memory::Initial::load_memory_map(const multiboot_t &info)
-{
+void Memory::Initial::load_memory_map()
+{/*
 	list = 0;
 	
 	Entry *entry = (Entry *)info.mmap_addr;
@@ -62,7 +62,7 @@ void Memory::Initial::load_memory_map(const multiboot_t &info)
 		}
 		
 		entry++;
-	}
+	}*/
 }
 
 void Memory::Initial::punch_holes(ReservedEntry *holes[], size_t hole_count)
@@ -186,13 +186,10 @@ Memory::Initial::Entry *Memory::Initial::find_biggest_entry()
 	return result;
 }
 
-void Memory::Initial::initialize_physical(const multiboot_t &info)
+void Memory::Initial::initialize_physical()
 {
-	// Make sure we have the required multiboot flags
-	assert(info.flags & MULTIBOOT_FLAG_MMAP, "No memory map passed!");
-	
 	// Load the memory map from the multiboot header
-	load_memory_map(info);
+	load_memory_map();
 	
 	if(!list)
 		console.panic().s("No usable memory found!").endl();

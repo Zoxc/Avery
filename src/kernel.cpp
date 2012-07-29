@@ -1,17 +1,16 @@
-#include "multiboot.hpp"
-#include "lib.hpp"
 #include "x86_64/arch.hpp"
-#include "x86_64/console.hpp"
+#include "lib.hpp"
+#include "console.hpp"
 
-extern "C" void kernel(const multiboot_t &info)
+void kernel()
 {
 	Runtime::initialize();
 	
-	console.clear().s("Welcome to long mode!").endl();
+	console.initialize();
 	
-	Arch::initialize(info);
+	console.clear().s("Welcome to Avery!").endl();
 	
-	console.s("Kernel is bored. Formating C:\\... (0%)").endl();
+	Arch::initialize();
 	
 	Arch::panic();
 }

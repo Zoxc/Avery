@@ -2,7 +2,7 @@
 #include "physical_mem.hpp"
 #include "physical_mem_init.hpp"
 #include "memory.hpp"
-#include "console.hpp"
+#include "../console.hpp"
 
 namespace Memory
 {
@@ -54,8 +54,6 @@ void Memory::Physical::initialize()
 		
 		pos += align(hole.pages, pages_per_byte) / pages_per_byte;
 	}
-	
-	size_t i = 0;
 	
 	console.s("Allocator data from ").x(Initial::allocator_memory).s(" - ").x(pos).lb();
 	

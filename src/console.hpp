@@ -1,14 +1,15 @@
 #pragma once
-#include "../common.hpp"
-#include "memory.hpp"
+#include "common.hpp"
 
 class Console
 {
 public:
+	typedef uint32_t color_t;
+	
 	class Color
 	{
 		public:
-			uint8_t value;
+			color_t value;
 	};
 	
 	static const Color black;
@@ -53,14 +54,31 @@ public:
 	Console &c(const char c);
 	Console &s(const char *str);
 	
-	static uint16_t *const vga;
+	void initialize();
 	
-	static const unsigned max_chars = 2000;
 private:
-	uint8_t x_offset;
-	uint8_t y_offset;
-	uint8_t color;
+	const size_t font_scanline = 2304;
+	const size_t font_width = 9;
+	const size_t font_height = 16;
+	
+	size_t left;
+	size_t top;
+	size_t width;
+	size_t height;
+	size_t x_offset;
+	size_t y_offset;
+	size_t min_x;
+	size_t min_y;
+	size_t max_x;
+	size_t max_y;
+	color_t *frame;
+	size_t scanline;
+	color_t fg_color;
+	color_t bg_color;
 	const Color *hex_fg;
+	
+	void blit_char(size_t x, size_t y, uint8_t index, color_t color);
+	void clear_frame(size_t x, size_t y, size_t width, size_t height);
 	
 	void update_cursor();
 	void scroll();
@@ -72,15 +90,6 @@ private:
 	static void do_panic();
 	
 	static const char digits[];
-
-	static const unsigned size_x;
-	static const unsigned size_y;
-	
-	static const unsigned min_x;
-	static const unsigned min_y;
-	
-	static const unsigned max_x;
-	static const unsigned max_y;
 };
 
 extern Console console;

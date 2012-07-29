@@ -1,27 +1,18 @@
-OUTPUT_FORMAT(elf32-i386)
-ENTRY(bootstrap.32)
+OUTPUT_FORMAT(elf64-x86-64)
+ENTRY(entry)
 SECTIONS
 {
-	. = 0x100000;
-	
-	.multiboot : { *(.multiboot) }
-	
-	.bootstrap :
-	{
-		cache/src/x86_64/bootstrap/*(.text .rodata* .data .bss)
-	}
-	
-	. = ALIGN(4096);
-	. += 0xFFFFFFFF80000000;
+	. = 0xFFFFFFFF80000000;
 	
 	kernel_start = .;
 	
-	.text ALIGN(4096) : AT(ADDR(.text) - 0xFFFFFFFF80000000) {
+	.text ALIGN(0x1000) :
+	{
 		*(.text)
 		*(.gnu.linkonce.t*)
 	}
 	
-	.rodata ALIGN(4096) : AT(ADDR(.rodata) - 0xFFFFFFFF80000000)
+	.rodata ALIGN(0x1000) :
 	{
 		ctors_start = .;
 		*(.ctor*)
@@ -29,15 +20,18 @@ SECTIONS
 		
 		*(.rodata)
 		*(.gnu.linkonce.r*)
+		
+		raw_bitmap_font = .;
+		*(.font)
 	}
 	
-	.data ALIGN(4096) : AT(ADDR(.data) - 0xFFFFFFFF80000000)
+	.data ALIGN(0x1000) :
 	{
 		*(.data)
 		*(.gnu.linkonce.d*)
 	}
 	
-	.bss ALIGN(4096) : AT(ADDR(.bss) - 0xFFFFFFFF80000000)
+	.bss ALIGN(0x1000) :
 	{
 		*(.bss)
 		*(.gnu.linkonce.b*)
