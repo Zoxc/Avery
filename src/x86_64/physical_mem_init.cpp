@@ -3,7 +3,6 @@
 #include "physical_mem.hpp"
 #include "memory.hpp"
 #include "../console.hpp"
-#include "debug.hpp"
 #include "boot.hpp"
 
 namespace Memory
@@ -89,7 +88,7 @@ void Memory::Initial::punch_holes(Boot::Segment *holes, size_t hole_count)
 				}
 				else
 				{
-					// There is space before and after the hole. Reuse the hole's entry in the list.
+					// There is space before and after the hole. Allocate a new hole.
 					
 					size_t entry_end = entry->end;
 					
@@ -173,17 +172,6 @@ void Memory::Initial::initialize_physical()
 
 	if(!list)
 		console.panic().s("No usable memory found!").endl();
-	/*
-	if(Debug::symbols && Debug::symbol_names)
-	{
-		// Don't overwrite symbol information
-		
-		ReservedEntry symbols_hole((size_t)Debug::symbols, (size_t)Debug::symbols_end);
-		ReservedEntry symbol_names_hole((size_t)Debug::symbol_names, (size_t)Debug::symbol_names_end);
-	
-		reserved_holes[reserved_hole_count++] = &symbols_hole;
-		reserved_holes[reserved_hole_count++] = &symbol_names_hole;
-	}*/
 
 	for(size_t i = 0; i < Boot::parameters.segment_count; ++i)
 	{

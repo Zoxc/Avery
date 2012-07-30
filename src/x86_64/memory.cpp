@@ -1,7 +1,6 @@
 #include "memory.hpp"
 #include "physical_mem_init.hpp"
 #include "../console.hpp"
-#include "debug.hpp"
 
 namespace Memory
 {

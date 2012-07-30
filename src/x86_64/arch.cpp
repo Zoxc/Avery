@@ -1,5 +1,4 @@
 #include "arch.hpp"
-#include "debug.hpp"
 #include "physical_mem.hpp"
 #include "physical_mem_init.hpp"
 #include "memory.hpp"
@@ -9,8 +8,6 @@ void Arch::initialize()
 {
 	initialize_gdt();
 	initialize_idt();
-
-	Debug::initialize();
 
 	Memory::Initial::initialize_physical();
 
