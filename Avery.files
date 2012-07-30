@@ -21,3 +21,4 @@ src/kernel.hpp
 src/lib.cpp
 src/lib.hpp
 Rakefile
+src/x86_64/boot.S

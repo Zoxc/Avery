@@ -3,12 +3,12 @@
 
 namespace Boot
 {
-	Parameters *parameters;
+	Parameters parameters;
 };
 
-extern "C" void entry(void *, void *, Boot::Parameters *parameters)
+extern "C" void boot_entry(Boot::Parameters *parameters)
 {
-	Boot::parameters = parameters;
+	Boot::parameters = *parameters;
 	
 	kernel();
 }

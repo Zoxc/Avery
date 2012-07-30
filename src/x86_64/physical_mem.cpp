@@ -30,7 +30,7 @@ void Memory::Physical::initialize()
 	
 	Hole *overhead_hole;
 	
-	for(Initial::Entry *entry = Initial::list; entry; entry = entry->get_next(), ++hole_count)
+	for(Initial::Entry *entry = Initial::list; entry; entry = entry->next, ++hole_count)
 	{
 		console.s("tentry is  ").x(entry).lb();
 		Hole &hole = holes[hole_count];

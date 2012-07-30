@@ -53,13 +53,15 @@ public:
 	
 	Console &c(const char c);
 	Console &s(const char *str);
-	
+
 	void initialize();
+	void update_frame_buffer();
 	
 private:
 	const size_t font_scanline = 2304;
 	const size_t font_width = 9;
 	const size_t font_height = 16;
+	const size_t font_height_pad = 19;
 	
 	size_t left;
 	size_t top;

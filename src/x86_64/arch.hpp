@@ -25,3 +25,5 @@ namespace Arch
 	void initialize();
 	void panic();
 };
+
+void bp();

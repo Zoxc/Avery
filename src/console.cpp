@@ -28,34 +28,39 @@ Console::Console() : fg_color(0x49535C), bg_color(0xE6EAE3), hex_fg(&light_green
 	
 }
 
+void Console::update_frame_buffer()
+{
+	frame = (color_t *)Boot::parameters.frame_buffer;
+}
+
 void Console::initialize()
 {
-	auto params = Boot::parameters;
+	auto &params = Boot::parameters;
 	
-	frame = (color_t *)params->frame_buffer;
-	scanline = params->frame_buffer_scanline;
+	frame = (color_t *)params.frame_buffer;
+	scanline = params.frame_buffer_scanline;
 	
-	size_t border = 50;
+	size_t border = 25;
 	
 	min_x = 0;
 	min_y = 0;
 	
-	max_x = params->frame_buffer_width - border * 2;
+	max_x = params.frame_buffer_width - border * 2;
 	max_x = max_x / font_width;
 	width = max_x * font_width;
 	max_x--;
 	
-	left = (params->frame_buffer_width - width) / 2;
+	left = (params.frame_buffer_width - width) / 2;
 	
-	max_y = params->frame_buffer_height - border * 2;
-	max_y = max_y / font_height;
-	height = max_y * font_height;
+	max_y = params.frame_buffer_height - border * 2;
+	max_y = max_y / font_height_pad;
+	height = max_y * font_height_pad;
 	max_y--;
 	
 	x_offset = min_x;
 	y_offset = min_y; 
 	
-	top = (params->frame_buffer_width - width) / 2;
+	top = (params.frame_buffer_width - width) / 2;
 	
 	clear();
 }
@@ -155,7 +160,7 @@ Console &Console::x(const void *value)
 	return *this;
 }
 
-const char Console::digits[] = "0123456789ABCDEF";
+const char Console::digits[] = "0123456789abcdef";
 
 void Console::put_base(size_t value, size_t base)
 {
@@ -169,10 +174,12 @@ void Console::put_base(size_t value, size_t base)
 
 void Console::put_base_padding(size_t value, size_t base, size_t min_size)
 {
+	min_size--;
+
 	size_t temp = value / base;
 	
-	if(min_size)
-		put_base_padding(temp, base, min_size - 1);
+	if(min_size || temp)
+		put_base_padding(temp, base, min_size);
 	
 	c(digits[value % base]);
 }
@@ -206,7 +213,7 @@ void Console::clear_frame(size_t x, size_t y, size_t width, size_t height)
 	auto row = frame + scanline * y + x;
 	auto row_stop = row + scanline * height;
 	
-	for(auto row = frame; row < row_stop; row += scanline)
+	for(; row < row_stop; row += scanline)
 	{
 		auto pixel_stop = row + width;
 		
@@ -218,12 +225,12 @@ void Console::clear_frame(size_t x, size_t y, size_t width, size_t height)
 void Console::scroll()
 {
 	auto row = frame + scanline * top + left;
-	auto row_stop = row + scanline * (height - font_height);
+	auto row_stop = row + scanline * (height - font_height_pad);
 	
 	for(; row < row_stop; row += scanline)
-		memcpy(row, row + scanline, width * sizeof(color_t));
-	
-	clear_frame(left, top + height - font_height, width, font_height);
+		memcpy(row, row + scanline * font_height_pad, width * sizeof(color_t));
+
+	clear_frame(left, top + height - font_height_pad, width, font_height_pad);
 }
 
 void Console::newline()
@@ -261,7 +268,7 @@ Console &Console::c(const char c)
 			if(x_offset >= max_x)
 				newline();
 			
-			blit_char(left + x_offset++ * font_width, top + y_offset * font_height, c, fg_color);
+			blit_char(left + x_offset++ * font_width, top + y_offset * font_height_pad, c, fg_color);
 			
 			update_cursor();
 			break;
@@ -284,9 +291,9 @@ Console &Console::s(const char *str)
 	return *this;
 }
 
-Console & Console::clear(void)
+Console &Console::clear(void)
 {
-	clear_frame(0, 0, Boot::parameters->frame_buffer_width, Boot::parameters->frame_buffer_height);
+	clear_frame(0, 0, Boot::parameters.frame_buffer_width, Boot::parameters.frame_buffer_height);
 	
 	x_offset = min_x;
 	y_offset = min_y;
