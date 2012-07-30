@@ -23,16 +23,12 @@ void Memory::Physical::Hole::set(size_t index)
 
 void Memory::Physical::initialize()
 {
-	console.s("Allocator data from ").x(Initial::allocator_memory).lb();
-	console.s("entry is  ").x(Initial::list).lb();
-	
 	hole_count = 0;
 	
 	Hole *overhead_hole;
 	
 	for(Initial::Entry *entry = Initial::list; entry; entry = entry->next, ++hole_count)
 	{
-		console.s("tentry is  ").x(entry).lb();
 		Hole &hole = holes[hole_count];
 		
 		if(entry == Initial::entry)

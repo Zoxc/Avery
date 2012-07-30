@@ -16,13 +16,12 @@ void Arch::initialize()
 
 	Memory::Initial::initialize();
 
-	return;
-
 	Memory::Physical::initialize();
 }
 
 void Arch::panic()
 {
+	asm("cli");
 	while(1) asm volatile("hlt");
 }
 
