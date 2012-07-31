@@ -9,10 +9,19 @@ namespace Memory
 		extern void *kernel_start;
 		extern void *kernel_end;
 	};
+
+	struct VirtualPage;
+	typedef VirtualPage *virtual_page_t;
+
+	struct PhysicalPage;
+	typedef PhysicalPage *physical_page_t;
+
+	struct PageTableEntry;
+	typedef PageTableEntry *page_table_entry_t;
 	
 	const size_t table_entries = 512;
 	
-	typedef uint64_t table_t[table_entries] __attribute__((aligned(0x1000)));
+	typedef page_table_entry_t table_t[table_entries] __attribute__((aligned(0x1000)));
 
 	const size_t page_size = Arch::page_size;
 	const size_t pt_size = table_entries * page_size;
@@ -33,16 +42,26 @@ namespace Memory
 	
 	const size_t mapped_pml4t = 0xFFFFFF0000000000;
 	
-	void map_address(size_t address, size_t physical, size_t flags);
-	
-	static inline size_t offset(const void *pointer)
+	void map_address(virtual_page_t address, physical_page_t physical, size_t flags);
+
+	static inline void assert_page_aligned(ptr_t address)
 	{
-		return (size_t)pointer;
+		assert((address & (Arch::page_size - 1)) == 0, "Unaligned page");
 	}
 
-	size_t *page_entry(const void *pointer);
+	static inline page_table_entry_t page_table_entry(physical_page_t page, size_t flags)
+	{
+		return (page_table_entry_t)((ptr_t)page | flags);
+	}
 
-	size_t physical(const void *virtual_address);
+	static inline physical_page_t physical_page_from_table_entry(page_table_entry_t entry)
+	{
+		return (physical_page_t)((ptr_t)entry & ~(page_flags));
+	}
+
+	page_table_entry_t *page_entry(virtual_page_t pointer);
+
+	physical_page_t physical(virtual_page_t virtual_address);
 
 	namespace Initial
 	{
@@ -51,7 +70,7 @@ namespace Memory
 		void initialize();
 	};
 	
-	static inline void load_pml4(size_t pml4t)
+	static inline void load_pml4(physical_page_t pml4t)
 	{
 		asm volatile ("mov %%rax, %%cr3" :: "a"(pml4t));
 	}

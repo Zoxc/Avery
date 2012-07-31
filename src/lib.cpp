@@ -1,5 +1,6 @@
 #include "common.hpp"
 #include "lib.hpp"
+#include "console.hpp"
 
 namespace Runtime
 {
@@ -20,6 +21,11 @@ void Runtime::setup_ctors(const ctor_t *start, const ctor_t *end)
 void Runtime::initialize()
 {
 	setup_ctors(&ctors_start, &ctors_end);
+}
+
+void Runtime::assert_function(const char *message)
+{
+	console.panic().s(message).endl();
 }
 
 extern "C"

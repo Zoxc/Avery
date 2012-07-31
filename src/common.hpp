@@ -30,6 +30,8 @@ typedef unsigned uint32_t;
 typedef long long int64_t;
 typedef unsigned long uint64_t;
 
+typedef uint64_t ptr_t;
+
 template<class T> static inline const T& min(const T& a, const T& b)
 {
 	return (a < b) ? a : b;
@@ -45,3 +47,12 @@ static inline size_t align_down(size_t value, size_t alignment)
 {
 	return value & ~(alignment - 1);
 };
+
+namespace Runtime
+{
+	void assert_function(const char *message);
+};
+
+#define stringify(value) #value
+#define assert_internal(expression, file, line, ...) ((expression) ? (void)0 : (void)Runtime::assert_function(file ":" stringify(line) ": " __VA_ARGS__))
+#define assert(expression, ...) assert_internal(expression, __FILE__, __LINE__, ## __VA_ARGS__)

@@ -196,7 +196,7 @@ void Memory::Initial::initialize_physical()
 	
 	for(Entry *entry = list; entry; entry = entry->next)
 	{
-		overhead += sizeof(Physical::Hole) + align(entry->end - entry->base, Physical::byte_map_size) / Physical::byte_map_size;
+		overhead += sizeof(Physical::Hole) + sizeof(Physical::Hole::unit_t) * align(entry->end - entry->base, Physical::Hole::byte_map_size) / Physical::Hole::byte_map_size;
 		
 		console.s("- Memory ").x(entry->base).s(" - ").x(entry->end).lb();
 	}

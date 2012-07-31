@@ -28,7 +28,7 @@ namespace Arch
 	struct GDTPointer
 	{
 		uint16_t limit;
-		uint64_t base;
+		Segment *base;
 	} __attribute__((packed));
 	
 	GDTPointer gdt_ptr;
@@ -45,7 +45,7 @@ namespace Arch
 
 void Arch::set_segment(uint8_t index, bool code, bool usermode)
 {
-	Segment &segment = reinterpret_cast<Segment &>(gdt_entries[index]);
+	auto &segment = gdt_entries[index];
 	
 	segment.accessed = 0;
 	segment.readable = 1;
@@ -64,7 +64,7 @@ void Arch::initialize_gdt()
 	set_segment(2, true, false);
 	
 	gdt_ptr.limit = sizeof(gdt_entries) - 1;
-	gdt_ptr.base = Memory::offset(gdt_entries);
+	gdt_ptr.base = gdt_entries;
 	
 	asm volatile ("lgdt %0" :: "m"(gdt_ptr));
 }
