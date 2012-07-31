@@ -1,4 +1,5 @@
 #include "memory.hpp"
+#include "physical_mem.hpp"
 #include "physical_mem_init.hpp"
 #include "../console.hpp"
 
@@ -6,13 +7,14 @@ namespace Memory
 {
 	#define MEMORY_PAGE_ALIGN __attribute__((aligned(0x1000)));
 
-	table_t pml4t MEMORY_PAGE_ALIGN;
-	table_t pdpt MEMORY_PAGE_ALIGN;
-	table_t pdt_kernel MEMORY_PAGE_ALIGN;
-	table_t pdt_dynamic MEMORY_PAGE_ALIGN;
-	table_t pt_kernel MEMORY_PAGE_ALIGN;
-	table_t pt_physical MEMORY_PAGE_ALIGN;
-	table_t pt_frame MEMORY_PAGE_ALIGN;
+	table_t ptl4_static MEMORY_PAGE_ALIGN;
+	table_t ptl3_static MEMORY_PAGE_ALIGN;
+	table_t ptl2_kernel MEMORY_PAGE_ALIGN;
+	table_t ptl2_dynamic MEMORY_PAGE_ALIGN;
+	table_t ptl1_kernel MEMORY_PAGE_ALIGN;
+	table_t ptl1_physical MEMORY_PAGE_ALIGN;
+	table_t ptl1_temp MEMORY_PAGE_ALIGN;
+	table_t ptl1_frame MEMORY_PAGE_ALIGN;
 	
 	namespace Initial
 	{
@@ -35,70 +37,118 @@ namespace Memory
 			return page_table_entry(physical((VirtualPage *)table), present_bit | write_bit);
 		}
 	}
+
+	bool page_table_entry_present(page_table_entry_t entry)
+	{
+		return (ptr_t)entry & present_bit;
+	}
+
+	void ensure_table_entry(table_t *table, size_t index)
+	{
+		if(!page_table_entry_present((*table)[index]))
+			(*table)[index] = page_table_entry(Physical::allocate_page(), present_bit | write_bit);
+	}
+
+	template<typename F> void decode_address(VirtualPage *pointer, F func)
+	{
+		auto address = (ptr_t)pointer;
+
+		assert_page_aligned(address);
+
+		assert((address & (Arch::page_size - 1)) == 0, "Unaligned page");
+
+		if(address > lower_half_end)
+			address -= upper_half_start - lower_half_end;
+
+		address >>= 12;
+
+		size_t ptl1_index = address & (table_entries - 1);
+
+		address >>= 9;
+
+		size_t ptl2_index = address & (table_entries - 1);
+
+		address >>= 9;
+
+		size_t ptl3_index = address & (table_entries - 1);
+
+		address >>= 9;
+
+		size_t ptl4_index = address & (table_entries - 1);
+
+		func(ptl4_index, ptl3_index, ptl2_index, ptl1_index);
+	}
+
+	page_table_entry_t get_page_entry(VirtualPage *pointer)
+	{
+		ptr_t phy_ptr;
+
+		decode_address(pointer, [&](size_t ptl4_index, size_t ptl3_index, size_t ptl2_index, size_t ptl1_index) {
+			phy_ptr = mapped_pml1ts + ptl4_index * ptl2_size + ptl3_index * ptl1_size + ptl2_index * page_size + ptl1_index * sizeof(size_t);
+		});
+
+		return *(page_table_entry_t *)phy_ptr;
+	}
+
+	page_table_entry_t *ensure_page_entry(VirtualPage *pointer)
+	{
+		ptr_t phy_ptr;
+
+		decode_address(pointer, [&](size_t ptl4_index, size_t ptl3_index, size_t ptl2_index, size_t ptl1_index) {
+			ensure_table_entry(&ptl4_static, ptl4_index);
+
+			auto ptl3 = (table_t *)(mapped_pml3ts + ptl4_index * page_size);
+
+			ensure_table_entry(ptl3, ptl3_index);
+
+			auto ptl2 = (table_t *)(mapped_pml2ts + ptl4_index * ptl1_size + ptl3_index * page_size);
+
+			ensure_table_entry(ptl2, ptl2_index);
+
+			phy_ptr = mapped_pml1ts + ptl4_index * ptl2_size + ptl3_index * ptl1_size + ptl2_index * page_size + ptl1_index * sizeof(size_t);
+		});
+
+		return (page_table_entry_t *)phy_ptr;
+	}
+
 };
-
-Memory::page_table_entry_t *Memory::page_entry(VirtualPage *pointer)
-{
-	auto address = (ptr_t)pointer;
-
-	assert_page_aligned(address);
-
-	assert((address & (Arch::page_size - 1)) == 0, "Unaligned page");
-
-	if(address > lower_half_end)
-		address -= upper_half_start - lower_half_end;
-
-	address >>= 12;
-
-	size_t pt_index = address & (table_entries - 1);
-
-	address >>= 9;
-
-	size_t pdt_index = address & (table_entries - 1);
-
-	address >>= 9;
-
-	size_t pdpt_index = address & (table_entries - 1);
-
-	address >>= 9;
-
-	size_t pml4_index = address & (table_entries - 1);
-
-	ptr_t phy_ptr = mapped_pml4t + pml4_index * pdt_size + pdpt_index * pt_size + pdt_index * page_size + pt_index * sizeof(size_t);
-
-	return (page_table_entry_t *)phy_ptr;
-}
 
 Memory::PhysicalPage *Memory::physical(VirtualPage *virtual_address)
 {
-	return physical_page_from_table_entry(*page_entry(virtual_address));
+	return physical_page_from_table_entry(get_page_entry(virtual_address));
 }
 
 void Memory::map_address(VirtualPage *address, PhysicalPage *physical, size_t flags)
 {
-	*page_entry(address) = page_table_entry(physical, flags);
+	*ensure_page_entry(address) = page_table_entry(physical, flags);
 }
 
 void Memory::Initial::initialize()
 {
-	pml4t[511] = table_entry_from_data(&pdpt);
-	pml4t[510] = table_entry_from_data(&pml4t); // map pml4t to itself
+	ptl4_static[511] = table_entry_from_data(&ptl3_static);
+	ptl4_static[510] = table_entry_from_data(&ptl4_static); // map ptl4 to itself
+
+	ptl3_static[509] = table_entry_from_data(&ptl4_static); // map ptl3 to ptl4
+	ptl3_static[510] = table_entry_from_data(&ptl2_kernel);
+	ptl3_static[511] = table_entry_from_data(&ptl2_dynamic);
 	
-	pdpt[510] = table_entry_from_data(&pdt_kernel);
-	pdpt[511] = table_entry_from_data(&pdt_dynamic);
-	
-	pdt_kernel[0] = table_entry_from_data(&pt_kernel);
-	pdt_dynamic[0] = table_entry_from_data(&pt_physical);
-	pdt_dynamic[1] = table_entry_from_data(&pt_frame);
+	ptl2_kernel[0] = table_entry_from_data(&ptl1_kernel);
+	ptl2_kernel[511] = table_entry_from_data(&ptl4_static); // map ptl2 to ptl4
+
+	ptl2_dynamic[0] = table_entry_from_data(&ptl1_physical);
+	ptl2_dynamic[1] = table_entry_from_data(&ptl1_frame);
+	ptl2_dynamic[2] = table_entry_from_data(&ptl1_temp);
 
 	// Map the physical memory allocator
 
-	map_page_table(pt_physical, 0, overhead, (PhysicalPage *)entry->base, write_bit);
+	map_page_table(ptl1_physical, 0, overhead, (PhysicalPage *)entry->base, write_bit);
 
 	// Map framebuffer to virtual memory
 
-	assert(Boot::parameters.frame_buffer_size < pt_size, "Framebuffer too large");
-	map_page_table(pt_frame, 0, Boot::parameters.frame_buffer_size, (PhysicalPage *)Boot::parameters.frame_buffer, write_bit);
+	assert(Boot::parameters.frame_buffer_size < ptl1_size, "Framebuffer too large");
+	map_page_table(ptl1_frame, 0, Boot::parameters.frame_buffer_size, (PhysicalPage *)Boot::parameters.frame_buffer, write_bit);
+
+	// Map kernel segments
 
 	for(size_t i = 0; i < Boot::parameters.segment_count; ++i)
 	{
@@ -125,12 +175,12 @@ void Memory::Initial::initialize()
 
 		size_t virtual_offset = hole.virtual_base - kernel_location;
 
-		map_page_table(pt_kernel, virtual_offset, virtual_offset + hole.end - hole.base, (PhysicalPage *)hole.base, flags);
+		map_page_table(ptl1_kernel, virtual_offset, virtual_offset + hole.end - hole.base, (PhysicalPage *)hole.base, flags);
 	}
 
-	load_pml4(physical((VirtualPage *)&pml4t));
+	load_pml4(physical((VirtualPage *)&ptl4_static));
 
-	Boot::parameters.frame_buffer = (void *)(kernel_location + pdt_size + pt_size);
+	Boot::parameters.frame_buffer = (void *)(kernel_location + ptl2_size + ptl1_size);
 
 	console.update_frame_buffer();
 }

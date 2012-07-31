@@ -202,7 +202,7 @@ void Memory::Initial::initialize_physical()
 	}
 	
 	assert(overhead <= entry->end - entry->base, "Memory allocation overhead is larger than the biggest memory block");
-	assert(overhead <= pt_size, "Memory map doesn't fit in 2 MB.");
+	assert(overhead <= ptl1_size, "Memory map doesn't fit in 2 MB.");
 	
 	console.s("Overhead is ").x(overhead).s(" bytes").lb();
 }

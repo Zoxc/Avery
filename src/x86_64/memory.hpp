@@ -32,10 +32,10 @@ namespace Memory
 	static_assert(sizeof(PhysicalPage) == Arch::page_size, "Invalid PhysicalPage size");
 
 	const size_t page_size = Arch::page_size;
-	const size_t pt_size = table_entries * page_size;
-	const size_t pdt_size = table_entries * pt_size;
-	const size_t pdpt_size = table_entries * pdt_size;
-	const size_t pml4t_size = table_entries * pdpt_size;
+	const size_t ptl1_size = table_entries * page_size;
+	const size_t ptl2_size = table_entries * ptl1_size;
+	const size_t ptl3_size = table_entries * ptl2_size;
+	const size_t ptl4_size = table_entries * ptl3_size;
 
 	const size_t write_bit = 2;
 	const size_t present_bit = 1;
@@ -45,10 +45,12 @@ namespace Memory
 	
 	const ptr_t upper_half_start = 0xFFFF800000000000;
 	const ptr_t lower_half_end = 0x0000800000000000;
-	
+
 	const ptr_t kernel_location = 0xFFFFFFFF80000000;
-	
-	const ptr_t mapped_pml4t = 0xFFFFFF0000000000;
+
+	const ptr_t mapped_pml1ts = 0xFFFFFF0000000000;
+	const ptr_t mapped_pml2ts = kernel_location - ptl2_size;
+	const ptr_t mapped_pml3ts = kernel_location + ptl1_size * 511;
 	
 	void map_address(VirtualPage *address, PhysicalPage *physical, size_t flags);
 
@@ -67,13 +69,14 @@ namespace Memory
 		return (PhysicalPage *)((ptr_t)entry & ~(page_flags));
 	}
 
-	page_table_entry_t *page_entry(VirtualPage *pointer);
+	page_table_entry_t get_page_entry(VirtualPage *pointer);
+	page_table_entry_t *ensure_page_entry(VirtualPage *pointer);
 
 	PhysicalPage *physical(VirtualPage *virtual_address);
 
 	namespace Initial
 	{
-		const ptr_t allocator_memory = kernel_location + pdt_size;
+		const ptr_t allocator_memory = kernel_location + ptl2_size;
 		
 		void initialize();
 	};
