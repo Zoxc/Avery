@@ -16,7 +16,7 @@ namespace Memory
 	
 	namespace Initial
 	{
-		void map_page_table(table_t &pt, size_t start_page_offset, size_t end_page_offset, physical_page_t base, size_t flags)
+		void map_page_table(table_t &pt, size_t start_page_offset, size_t end_page_offset, PhysicalPage *base, size_t flags)
 		{
 			assert_page_aligned((ptr_t)base);
 
@@ -27,17 +27,17 @@ namespace Memory
 			assert(start_index < table_entries && start_index < end_index && end_index < table_entries, "Range out of bounds");
 			
 			for(size_t i = start_index; i < end_index; i++)
-				pt[i] = page_table_entry((physical_page_t)((ptr_t)base + (i - start_index) * Arch::page_size), flags);
+				pt[i] = page_table_entry((PhysicalPage *)((ptr_t)base + (i - start_index) * Arch::page_size), flags);
 		}
 
 		page_table_entry_t table_entry_from_data(void *table)
 		{
-			return page_table_entry(physical((virtual_page_t)table), present_bit | write_bit);
+			return page_table_entry(physical((VirtualPage *)table), present_bit | write_bit);
 		}
 	}
 };
 
-Memory::page_table_entry_t *Memory::page_entry(virtual_page_t pointer)
+Memory::page_table_entry_t *Memory::page_entry(VirtualPage *pointer)
 {
 	auto address = (ptr_t)pointer;
 
@@ -69,12 +69,12 @@ Memory::page_table_entry_t *Memory::page_entry(virtual_page_t pointer)
 	return (page_table_entry_t *)phy_ptr;
 }
 
-Memory::physical_page_t Memory::physical(virtual_page_t virtual_address)
+Memory::PhysicalPage *Memory::physical(VirtualPage *virtual_address)
 {
 	return physical_page_from_table_entry(*page_entry(virtual_address));
 }
 
-void Memory::map_address(virtual_page_t address, physical_page_t physical, size_t flags)
+void Memory::map_address(VirtualPage *address, PhysicalPage *physical, size_t flags)
 {
 	*page_entry(address) = page_table_entry(physical, flags);
 }
@@ -93,12 +93,12 @@ void Memory::Initial::initialize()
 
 	// Map the physical memory allocator
 
-	map_page_table(pt_physical, 0, overhead, (physical_page_t)entry->base, write_bit);
+	map_page_table(pt_physical, 0, overhead, (PhysicalPage *)entry->base, write_bit);
 
 	// Map framebuffer to virtual memory
 
 	assert(Boot::parameters.frame_buffer_size < pt_size, "Framebuffer too large");
-	map_page_table(pt_frame, 0, Boot::parameters.frame_buffer_size, (physical_page_t)Boot::parameters.frame_buffer, write_bit);
+	map_page_table(pt_frame, 0, Boot::parameters.frame_buffer_size, (PhysicalPage *)Boot::parameters.frame_buffer, write_bit);
 
 	for(size_t i = 0; i < Boot::parameters.segment_count; ++i)
 	{
@@ -125,10 +125,10 @@ void Memory::Initial::initialize()
 
 		size_t virtual_offset = hole.virtual_base - kernel_location;
 
-		map_page_table(pt_kernel, virtual_offset, virtual_offset + hole.end - hole.base, (physical_page_t)hole.base, flags);
+		map_page_table(pt_kernel, virtual_offset, virtual_offset + hole.end - hole.base, (PhysicalPage *)hole.base, flags);
 	}
 
-	load_pml4(physical((virtual_page_t)&pml4t));
+	load_pml4(physical((VirtualPage *)&pml4t));
 
 	Boot::parameters.frame_buffer = (void *)(kernel_location + pdt_size + pt_size);
 

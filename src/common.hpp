@@ -50,9 +50,16 @@ static inline size_t align_down(size_t value, size_t alignment)
 
 namespace Runtime
 {
-	void assert_function(const char *message);
+	void assert_function(const char *message) __attribute((noreturn));
+	void abort_function(const char *message) __attribute((noreturn));
 };
 
+void panic(const char *message) __attribute((noreturn));
+
+#define debug(statement) statement
 #define stringify(value) #value
 #define assert_internal(expression, file, line, ...) ((expression) ? (void)0 : (void)Runtime::assert_function(file ":" stringify(line) ": " __VA_ARGS__))
 #define assert(expression, ...) assert_internal(expression, __FILE__, __LINE__, ## __VA_ARGS__)
+
+#define abort_internal(file, line, ...) Runtime::abort_function(file ":" stringify(line) ": " __VA_ARGS__)
+#define abort(...) abort_internal(__FILE__, __LINE__, ## __VA_ARGS__)

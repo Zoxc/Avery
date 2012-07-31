@@ -23,9 +23,25 @@ void Runtime::initialize()
 	setup_ctors(&ctors_start, &ctors_end);
 }
 
+void Runtime::abort_function(const char *message)
+{
+	console.panic().s(message).endl();
+
+	__builtin_unreachable();
+}
+
 void Runtime::assert_function(const char *message)
 {
 	console.panic().s(message).endl();
+
+	__builtin_unreachable();
+}
+
+void panic(const char *message)
+{
+	console.panic().s(message).endl();
+
+	__builtin_unreachable();
 }
 
 extern "C"
@@ -40,7 +56,7 @@ extern "C"
 		}
 	}
 
-	void *memset(void *ptr, int value, unsigned long num)
+	void *memset(void *ptr, uint8_t value, unsigned long num)
 	{
 		uint8_t *dest = (uint8_t *)ptr;
 		for (; num != 0; num--) *dest++ = value;

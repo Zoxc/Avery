@@ -131,7 +131,7 @@ void Memory::Initial::align_holes()
 	{
 		entry->base = align(entry->base, Arch::page_size);
 		entry->end = align_down(entry->end, Arch::page_size);
-		
+
 		if(entry->end > entry->base)
 			prev = entry; // Go to the next entry
 		else
@@ -201,6 +201,7 @@ void Memory::Initial::initialize_physical()
 		console.s("- Memory ").x(entry->base).s(" - ").x(entry->end).lb();
 	}
 	
+	assert(overhead <= entry->end - entry->base, "Memory allocation overhead is larger than the biggest memory block");
 	assert(overhead <= pt_size, "Memory map doesn't fit in 2 MB.");
 	
 	console.s("Overhead is ").x(overhead).s(" bytes").lb();

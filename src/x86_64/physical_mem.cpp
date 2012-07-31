@@ -16,23 +16,75 @@ namespace Memory
 
 Memory::Physical::Hole *Memory::Physical::holes = (Hole *)Initial::allocator_memory;
 
+void Memory::Physical::Hole::clear(size_t index)
+{
+	address(index, [&](unit_t &unit, unit_t bit) {
+		assert((unit & bit) != 0, "Bit already cleared");
+
+		unit &= ~bit;
+	});
+}
+
 void Memory::Physical::Hole::set(size_t index)
 {
-	bitmap[index / bits_per_unit] |= 1 << (index & (bits_per_unit - 1));
+	address(index, [&](unit_t &unit, unit_t bit) {
+		assert((unit & bit) == 0, "Bit already set");
+
+		unit |= bit;
+	});
 }
 
 bool Memory::Physical::Hole::get(size_t index)
 {
-	return (bitmap[index / bits_per_unit] & (1 << (index & (bits_per_unit - 1)))) != 0;
+	bool result;
+
+	address(index, [&](unit_t unit, unit_t bit) {
+		result = (unit & bit) != 0;
+	});
+
+	return result;
 }
 
-Memory::physical_page_t Memory::Physical::allocate_page()
+void Memory::Physical::free_page(PhysicalPage *page)
 {
-	ptr_t result = 0;
+	assert_page_aligned((ptr_t)page);
 
-	assert(result, "Out of physical memory");
+	for(size_t i = 0; i < hole_count; ++i)
+	{
+		Hole &hole = holes[i];
 
-	return (physical_page_t)result;
+		if(page >= hole.base && page < hole.end)
+		{
+			hole.clear(page - hole.base);
+			return;
+		}
+	}
+
+	abort("Memory doesn't belong to any of the holes");
+}
+
+Memory::PhysicalPage *Memory::Physical::allocate_page()
+{
+	for(size_t i = 0; i < hole_count; ++i)
+	{
+		Hole &hole = holes[i];
+
+		Hole::unit_t *end = hole.bitmap + hole.units;
+
+		for(Hole::unit_t *unit = hole.bitmap; unit < end; ++unit)
+		{
+			if(*unit != (Hole::unit_t)-1)
+			{
+				size_t bit_index = __builtin_ffsl(~*unit) - 1;
+
+				*unit |= (size_t)1 << bit_index;
+
+				return hole.base + (unit - hole.bitmap) * Hole::bits_per_unit + bit_index;
+			}
+		}
+	}
+
+	panic("Out of physical memory");
 }
 
 void Memory::Physical::initialize()
@@ -48,8 +100,9 @@ void Memory::Physical::initialize()
 		if(entry == Initial::entry)
 			overhead_hole = &hole;
 		
-		hole.base = entry->base;
+		hole.base = (PhysicalPage *)entry->base;
 		hole.pages = (entry->end - entry->base) / Arch::page_size;
+		hole.end = hole.base + hole.pages;
 		hole.units = align(hole.pages, Hole::bits_per_unit) / Hole::bits_per_unit;
 	}
 	
@@ -69,15 +122,17 @@ void Memory::Physical::initialize()
 
 		// Set non-existent pages at the end of the word as allocated
 
-		for(size_t p = hole.pages; p < hole.units * Hole::bits_per_unit; ++p)
-			hole.set(p);
-		
+		size_t last_unit = hole.units - 1;
+
+		hole.bitmap[last_unit] = -1; // Set all pages at the end as allocated
+
+		for(size_t p = last_unit * Hole::bits_per_unit; p < hole.pages; ++p) // Clear the valid pages
+			hole.clear(p);
+
 		pos += hole.units;
 	}
-	
-	console.s("Allocator data from ").x(Initial::allocator_memory).s(" - ").x(pos).lb();
-	
-	size_t used = align((size_t)pos, Arch::page_size) - Initial::allocator_memory;
+
+	size_t used = align((ptr_t)pos, Arch::page_size) - Initial::allocator_memory;
 	
 	used /= Arch::page_size;
 	

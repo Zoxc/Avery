@@ -10,18 +10,26 @@ namespace Memory
 		extern void *kernel_end;
 	};
 
-	struct VirtualPage;
-	typedef VirtualPage *virtual_page_t;
-
-	struct PhysicalPage;
-	typedef PhysicalPage *physical_page_t;
-
 	struct PageTableEntry;
 	typedef PageTableEntry *page_table_entry_t;
-	
+
 	const size_t table_entries = 512;
-	
+
 	typedef page_table_entry_t table_t[table_entries] __attribute__((aligned(0x1000)));
+
+	struct VirtualPage
+	{
+		uint8_t data[Arch::page_size];
+	};
+
+	static_assert(sizeof(VirtualPage) == Arch::page_size, "Invalid VirtualPage size");
+
+	struct PhysicalPage
+	{
+		uint8_t data[Arch::page_size];
+	};
+
+	static_assert(sizeof(PhysicalPage) == Arch::page_size, "Invalid PhysicalPage size");
 
 	const size_t page_size = Arch::page_size;
 	const size_t pt_size = table_entries * page_size;
@@ -35,42 +43,42 @@ namespace Memory
 
 	const size_t page_flags = 0x80000000000003FF;
 	
-	const size_t upper_half_start = 0xFFFF800000000000;
-	const size_t lower_half_end = 0x0000800000000000;
+	const ptr_t upper_half_start = 0xFFFF800000000000;
+	const ptr_t lower_half_end = 0x0000800000000000;
 	
-	const size_t kernel_location = 0xFFFFFFFF80000000;
+	const ptr_t kernel_location = 0xFFFFFFFF80000000;
 	
-	const size_t mapped_pml4t = 0xFFFFFF0000000000;
+	const ptr_t mapped_pml4t = 0xFFFFFF0000000000;
 	
-	void map_address(virtual_page_t address, physical_page_t physical, size_t flags);
+	void map_address(VirtualPage *address, PhysicalPage *physical, size_t flags);
 
-	static inline void assert_page_aligned(ptr_t address)
+	static inline void assert_page_aligned(size_t address)
 	{
 		assert((address & (Arch::page_size - 1)) == 0, "Unaligned page");
 	}
 
-	static inline page_table_entry_t page_table_entry(physical_page_t page, size_t flags)
+	static inline page_table_entry_t page_table_entry(PhysicalPage *page, size_t flags)
 	{
 		return (page_table_entry_t)((ptr_t)page | flags);
 	}
 
-	static inline physical_page_t physical_page_from_table_entry(page_table_entry_t entry)
+	static inline PhysicalPage *physical_page_from_table_entry(page_table_entry_t entry)
 	{
-		return (physical_page_t)((ptr_t)entry & ~(page_flags));
+		return (PhysicalPage *)((ptr_t)entry & ~(page_flags));
 	}
 
-	page_table_entry_t *page_entry(virtual_page_t pointer);
+	page_table_entry_t *page_entry(VirtualPage *pointer);
 
-	physical_page_t physical(virtual_page_t virtual_address);
+	PhysicalPage *physical(VirtualPage *virtual_address);
 
 	namespace Initial
 	{
-		const size_t allocator_memory = kernel_location + pdt_size;
+		const ptr_t allocator_memory = kernel_location + pdt_size;
 		
 		void initialize();
 	};
 	
-	static inline void load_pml4(physical_page_t pml4t)
+	static inline void load_pml4(PhysicalPage *pml4t)
 	{
 		asm volatile ("mov %%rax, %%cr3" :: "a"(pml4t));
 	}
