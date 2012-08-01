@@ -13,7 +13,6 @@ namespace Memory
 	table_t ptl2_dynamic MEMORY_PAGE_ALIGN;
 	table_t ptl1_kernel MEMORY_PAGE_ALIGN;
 	table_t ptl1_physical MEMORY_PAGE_ALIGN;
-	table_t ptl1_temp MEMORY_PAGE_ALIGN;
 	table_t ptl1_frame MEMORY_PAGE_ALIGN;
 	
 	namespace Initial
@@ -38,6 +37,20 @@ namespace Memory
 		}
 	}
 
+	VirtualPage *simple_position = (VirtualPage *)simple_allocator_start;
+
+	VirtualPage *simple_allocate(size_t pages)
+	{
+		auto result = simple_position;
+		auto next = simple_position + pages;
+
+		assert((ptr_t)next < simple_allocator_end, "Out of simple virtual memory pages");
+
+		simple_position = next;
+
+		return result;
+	}
+
 	bool page_table_entry_present(page_table_entry_t entry)
 	{
 		return (ptr_t)entry & present_bit;
@@ -57,8 +70,7 @@ namespace Memory
 
 		assert((address & (Arch::page_size - 1)) == 0, "Unaligned page");
 
-		if(address > lower_half_end)
-			address -= upper_half_start - lower_half_end;
+		address &= ~upper_half_bits;
 
 		address >>= 12;
 
@@ -137,7 +149,6 @@ void Memory::Initial::initialize()
 
 	ptl2_dynamic[0] = table_entry_from_data(&ptl1_physical);
 	ptl2_dynamic[1] = table_entry_from_data(&ptl1_frame);
-	ptl2_dynamic[2] = table_entry_from_data(&ptl1_temp);
 
 	// Map the physical memory allocator
 
@@ -180,7 +191,7 @@ void Memory::Initial::initialize()
 
 	load_pml4(physical((VirtualPage *)&ptl4_static));
 
-	Boot::parameters.frame_buffer = (void *)(kernel_location + ptl2_size + ptl1_size);
+	Boot::parameters.frame_buffer = (void *)framebuffer_start;
 
 	console.update_frame_buffer();
 }

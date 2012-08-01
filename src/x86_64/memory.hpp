@@ -43,6 +43,7 @@ namespace Memory
 
 	const size_t page_flags = 0x80000000000003FF;
 	
+	const ptr_t upper_half_bits = 0xFFFF000000000000;
 	const ptr_t upper_half_start = 0xFFFF800000000000;
 	const ptr_t lower_half_end = 0x0000800000000000;
 
@@ -76,11 +77,16 @@ namespace Memory
 
 	namespace Initial
 	{
-		const ptr_t allocator_memory = kernel_location + ptl2_size;
-		
 		void initialize();
 	};
+
+	const ptr_t physical_allocator_memory = kernel_location + ptl2_size;
+	const ptr_t framebuffer_start = physical_allocator_memory + ptl1_size;
+	const ptr_t simple_allocator_start = framebuffer_start + ptl1_size;
+	const ptr_t simple_allocator_end = physical_allocator_memory + ptl2_size;
 	
+	VirtualPage *simple_allocate(size_t pages = 1);
+
 	static inline void load_pml4(PhysicalPage *pml4t)
 	{
 		asm volatile ("mov %%rax, %%cr3" :: "a"(pml4t));

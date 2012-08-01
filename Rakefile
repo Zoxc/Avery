@@ -34,7 +34,7 @@ task :build do
 				puts "Compiling #{source}..."
 				bitcode = "build/#{source}.o"
 				FileUtils.makedirs(File.dirname(bitcode))
-				execute 'clang', '-std=gnu++11', '-target', 'x86_64-generic-generic', '-emit-llvm', '-c', '-ffreestanding', '-Wall', '-fno-exceptions', '-fno-unwind-tables', '-fno-inline', source, '-o', bitcode, '-g'
+				execute 'clang', '-std=gnu++11', '-target', 'x86_64-generic-generic', '-emit-llvm', '-c', '-ffreestanding', '-Wall', '-Wextra', '-fno-exceptions', '-fno-unwind-tables', '-fno-inline', source, '-o', bitcode, '-g'
 				bitcodes << bitcode
 		end
 	end

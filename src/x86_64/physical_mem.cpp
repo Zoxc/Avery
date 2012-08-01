@@ -14,7 +14,7 @@ namespace Memory
 	};
 };
 
-Memory::Physical::Hole *Memory::Physical::holes = (Hole *)Initial::allocator_memory;
+Memory::Physical::Hole *Memory::Physical::holes = (Hole *)physical_allocator_memory;
 
 void Memory::Physical::Hole::clear(size_t index)
 {
@@ -132,7 +132,7 @@ void Memory::Physical::initialize()
 		pos += hole.units;
 	}
 
-	size_t used = align((ptr_t)pos, Arch::page_size) - Initial::allocator_memory;
+	size_t used = align((ptr_t)pos, Arch::page_size) - physical_allocator_memory;
 	
 	used /= Arch::page_size;
 	
