@@ -1,7 +1,6 @@
 #pragma once
-#include "../common.hpp"
+#include "common.hpp"
 #include "arch.hpp"
-#include "memory.hpp"
 
 namespace Memory
 {

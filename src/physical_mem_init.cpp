@@ -1,9 +1,6 @@
-#include "../common.hpp"
 #include "physical_mem_init.hpp"
 #include "physical_mem.hpp"
-#include "memory.hpp"
-#include "../console.hpp"
-#include "boot.hpp"
+#include "console.hpp"
 
 namespace Memory
 {
@@ -12,7 +9,7 @@ namespace Memory
 		// Functions to work with the initial memory map
 		
 		void load_memory_map();
-		void punch_holes(Boot::Segment *holes, size_t hole_count);
+		void punch_holes(Params::Segment *holes, size_t hole_count);
 		void align_holes();
 		void dump_list();
 		Entry *find_biggest_entry();
@@ -28,12 +25,12 @@ void Memory::Initial::load_memory_map()
 {
 	list = 0;
 
-	Entry *entry = &Boot::parameters.ranges[0];
-	Entry *end = &Boot::parameters.ranges[Boot::parameters.range_count];
+	Entry *entry = &Params::info.ranges[0];
+	Entry *end = &Params::info.ranges[Params::info.range_count];
 	
 	while(entry != end)
 	{
-		if(entry->type == Boot::MemoryUsable)
+		if(entry->type == Params::MemoryUsable)
 		{
 			entry->next = list;
 			list = entry;
@@ -43,7 +40,7 @@ void Memory::Initial::load_memory_map()
 	}
 }
 
-void Memory::Initial::punch_holes(Boot::Segment *holes, size_t hole_count)
+void Memory::Initial::punch_holes(Params::Segment *holes, size_t hole_count)
 {
 	Entry *entry = list;
 	Entry *prev = entry;
@@ -94,9 +91,9 @@ void Memory::Initial::punch_holes(Boot::Segment *holes, size_t hole_count)
 					
 					entry->end = holes[i].base;
 
-					assert(Boot::parameters.range_count < Boot::memory_range_max, "Out of memory ranges to use");
+					assert(Params::info.range_count < Params::memory_range_max, "Out of memory ranges to use");
 
-					Entry *new_hole = &Boot::parameters.ranges[Boot::parameters.range_count++];
+					Entry *new_hole = &Params::info.ranges[Params::info.range_count++];
 					
 					new_hole->base = holes[i].end;
 					new_hole->end = entry_end;
@@ -173,12 +170,12 @@ void Memory::Initial::initialize_physical()
 	if(!list)
 		console.panic().s("No usable memory found!").endl();
 
-	for(size_t i = 0; i < Boot::parameters.segment_count; ++i)
+	for(size_t i = 0; i < Params::info.segment_count; ++i)
 	{
-		console.s("- Segment ").x(Boot::parameters.segments[i].base).s(" - ").x(Boot::parameters.segments[i].end).lb();
+		console.s("- Segment ").x(Params::info.segments[i].base).s(" - ").x(Params::info.segments[i].end).lb();
 	}
 
-	punch_holes(&Boot::parameters.segments[0], Boot::parameters.segment_count);
+	punch_holes(&Params::info.segments[0], Params::info.segment_count);
 	
 	if(!list)
 		console.panic().s("No usable memory found after reserving holes!").endl();

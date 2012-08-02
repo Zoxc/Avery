@@ -1,21 +1,21 @@
 #include "arch.hpp"
-#include "physical_mem.hpp"
-#include "physical_mem_init.hpp"
 #include "memory.hpp"
 #include "../console.hpp"
 #include "apic.hpp"
 
-void Arch::initialize()
+void Arch::initialize_basic()
 {
 	initialize_gdt();
 	initialize_idt();
+}
 
-	Memory::Initial::initialize_physical();
-
+void Arch::initialize_memory()
+{
 	Memory::Initial::initialize();
+}
 
-	Memory::Physical::initialize();
-
+void Arch::initialize()
+{
 	console.s("Loading APIC").lb();
 
 	//APIC::initialize();

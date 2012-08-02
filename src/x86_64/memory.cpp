@@ -1,7 +1,7 @@
 #include "memory.hpp"
-#include "physical_mem.hpp"
-#include "physical_mem_init.hpp"
 #include "../console.hpp"
+#include "../physical_mem.hpp"
+#include "../physical_mem_init.hpp"
 
 namespace Memory
 {
@@ -165,23 +165,23 @@ void Memory::Initial::initialize()
 
 	// Map kernel segments
 
-	for(size_t i = 0; i < Boot::parameters.segment_count; ++i)
+	for(size_t i = 0; i < Params::info.segment_count; ++i)
 	{
-		auto &hole = Boot::parameters.segments[i];
+		auto &hole = Params::info.segments[i];
 
 		size_t flags = nx_bit;
 
 		switch(hole.type)
 		{
-		case Boot::SegmentCode:
+		case Params::SegmentCode:
 			flags &= ~nx_bit;
 			break;
 
-		case Boot::SegmentData:
+		case Params::SegmentData:
 			flags |= write_bit;
 			break;
 
-		case Boot::SegmentReadOnlyData:
+		case Params::SegmentReadOnlyData:
 			break;
 
 		default:

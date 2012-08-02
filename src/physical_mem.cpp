@@ -1,9 +1,8 @@
 #include "arch.hpp"
 #include "physical_mem.hpp"
 #include "physical_mem_init.hpp"
-#include "memory.hpp"
-#include "../console.hpp"
-#include "../lib.hpp"
+#include "console.hpp"
+#include "lib.hpp"
 
 namespace Memory
 {

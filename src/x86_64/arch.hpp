@@ -40,7 +40,9 @@ namespace Arch
 
 	void initialize_idt();
 	void initialize_gdt();
-	
+
+	void initialize_basic();
+	void initialize_memory();
 	void initialize();
 	void panic();
 };

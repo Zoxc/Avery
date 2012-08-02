@@ -1,13 +1,13 @@
 #pragma once
-#include "../common.hpp"
+#include "common.hpp"
 #include "arch.hpp"
-#include "boot.hpp"
+#include "params.hpp"
 
 namespace Memory
 {
 	namespace Initial
 	{
-		typedef Boot::MemoryRange Entry;
+		typedef Params::MemoryRange Entry;
 
 		extern Entry *list;
 

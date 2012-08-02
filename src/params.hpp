@@ -1,7 +1,9 @@
 #pragma once
 #include "arch.hpp"
 
-namespace Boot
+class ConsoleBackend;
+
+namespace Params
 {
 	enum MemoryType
 	{
@@ -37,19 +39,14 @@ namespace Boot
 	const size_t memory_range_max = 0x100;
 	const size_t segment_max = 0x10;
 
-	struct Parameters
+	struct Info
 	{
-		size_t size;
-		void *frame_buffer;
-		size_t frame_buffer_size;
-		size_t frame_buffer_width;
-		size_t frame_buffer_height;
-		size_t frame_buffer_scanline;
 		size_t range_count;
 		size_t segment_count;
 		struct MemoryRange ranges[memory_range_max];
 		struct Segment segments[segment_max];
+		ConsoleBackend *console_backend;
 	};
-	
-	extern Parameters parameters;
+
+	extern Info info;
 };

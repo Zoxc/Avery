@@ -1,16 +1,10 @@
 src/x86_64/arch.cpp
 src/x86_64/arch.hpp
-src/x86_64/boot.cpp
-src/x86_64/boot.hpp
 src/x86_64/gdt.cpp
 src/x86_64/idt.cpp
 src/x86_64/io.hpp
 src/x86_64/memory.cpp
 src/x86_64/memory.hpp
-src/x86_64/physical_mem.cpp
-src/x86_64/physical_mem.hpp
-src/x86_64/physical_mem_init.cpp
-src/x86_64/physical_mem_init.hpp
 src/common.hpp
 src/console.cpp
 src/console.hpp
@@ -28,3 +22,10 @@ src/consoles/fb.cpp
 src/consoles/display.hpp
 src/consoles/display.cpp
 src/arch.hpp
+src/physical_mem_init.hpp
+src/physical_mem_init.cpp
+src/params.hpp
+src/params.cpp
+src/x86_64/boot.cpp
+src/physical_mem.hpp
+src/physical_mem.cpp
