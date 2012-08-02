@@ -13,7 +13,6 @@ src/kernel.hpp
 src/lib.cpp
 src/lib.hpp
 Rakefile
-src/x86_64/boot.S
 src/x86_64/apic.cpp
 src/x86_64/apic.hpp
 src/x86_64/load-segments.S
@@ -26,6 +25,7 @@ src/physical_mem_init.hpp
 src/physical_mem_init.cpp
 src/params.hpp
 src/params.cpp
-src/x86_64/boot.cpp
 src/physical_mem.hpp
 src/physical_mem.cpp
+src/x86_64/boot/boot.S
+src/x86_64/boot/boot.cpp

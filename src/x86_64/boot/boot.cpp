@@ -1,8 +1,8 @@
-#include "../params.hpp"
-#include "../kernel.hpp"
-#include "../console.hpp"
-#include "../lib.hpp"
-#include "../consoles/fb.hpp"
+#include "../../params.hpp"
+#include "../../kernel.hpp"
+#include "../../console.hpp"
+#include "../../lib.hpp"
+#include "../../consoles/fb.hpp"
 
 struct Parameters
 {
