@@ -1,34 +1,22 @@
 #pragma once
 #include "common.hpp"
 
+class ConsoleBackend;
+
 class Console
 {
 public:
 	typedef uint32_t color_t;
-	
-	class Color
+
+	enum Color
 	{
-		public:
-			color_t value;
+		Default,
+		Panic,
+		Strong,
+		Number,
+		ColorCount
 	};
-	
-	static const Color black;
-	static const Color blue;
-	static const Color green;
-	static const Color cyan;
-	static const Color red;
-	static const Color magenta;
-	static const Color brown;
-	static const Color light_gray;
-	static const Color dark_gray;
-	static const Color light_blue;
-	static const Color light_green;
-	static const Color light_cyan;
-	static const Color light_red;
-	static const Color light_magenta;
-	static const Color yellow;
-	static const Color white;
-	
+
 	Console();
 	
 	Console &clear();
@@ -37,8 +25,7 @@ public:
 
 	static void (*flush_line)();
 	
-	Console &fg(const Color &new_fg);
-	Console &bg(const Color &new_bg);
+	Console &color(Color new_color);
 	
 	Console &u(const unsigned long value);
 	
@@ -54,34 +41,23 @@ public:
 	Console &c(const char c);
 	Console &s(const char *str);
 
-	void initialize();
-	void update_frame_buffer();
+	void initialize(ConsoleBackend *backend);
+
+	void get_buffer_info(void *&buffer, size_t &buffer_size);
+	void new_buffer(void *buffer);
 	
 private:
-	const size_t font_scanline = 2304;
-	const size_t font_width = 9;
-	const size_t font_height = 16;
-	const size_t font_height_pad = 19;
-	
-	size_t left;
-	size_t top;
-	size_t width;
-	size_t height;
+	ConsoleBackend *backend;
+
 	size_t x_offset;
 	size_t y_offset;
-	size_t min_x;
-	size_t min_y;
-	size_t max_x;
-	size_t max_y;
-	color_t *frame;
-	size_t scanline;
-	color_t fg_color;
-	color_t bg_color;
-	const Color *hex_fg;
-	
-	void blit_char(size_t x, size_t y, uint8_t index, color_t color);
-	void clear_frame(size_t x, size_t y, size_t width, size_t height);
-	
+
+	size_t width;
+	size_t height;
+
+	Color text_color;
+	Color hex_fg;
+
 	void update_cursor();
 	void scroll();
 	void newline();
@@ -92,6 +68,16 @@ private:
 	static void do_panic();
 	
 	static const char digits[];
+};
+
+class ConsoleBackend
+{
+public:
+	virtual void color(Console::Color text) = 0;
+	virtual void print(char c) = 0;
+	virtual void clear() = 0;
+	virtual void get_buffer_info(void *&buffer, size_t &buffer_size) = 0;
+	virtual void new_buffer(void *buffer) = 0;
 };
 
 extern Console console;

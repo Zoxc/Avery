@@ -34,15 +34,15 @@ task :build do
 				puts "Compiling #{source}..."
 				bitcode = "build/#{source}.o"
 				FileUtils.makedirs(File.dirname(bitcode))
-				execute 'clang', '-std=gnu++11', '-target', 'x86_64-generic-generic', '-emit-llvm', '-c', '-ffreestanding', '-Wall', '-Wextra', '-fno-exceptions', '-fno-unwind-tables', '-fno-inline', source, '-o', bitcode, '-g'
+				execute 'clang', '-std=gnu++11', '-target', 'x86_64-generic-generic', '-emit-llvm', '-c', '-ffreestanding', '-Wall', '-Wextra', '-fno-rtti', '-fno-exceptions', '-fno-unwind-tables', '-fno-inline', source, '-o', bitcode
 				bitcodes << bitcode
 		end
 	end
 	
 	puts "Linking..."
-				
-	execute 'llvm-link', *bitcodes, "-o=#{kernel_object}"
-	execute 'llc', kernel_object, '-filetype=obj', '-disable-red-zone', '-code-model=kernel', '-relocation-model=static', '-mattr=-sse,-sse2,-mmx', '-O2', '-o', kernel_object
+	
+	execute 'llvm-link', *bitcodes, "-o=#{kernel_bitcode}"
+	execute 'llc', kernel_bitcode, '-filetype=obj', '-disable-red-zone', '-code-model=kernel', '-relocation-model=static', '-mattr=-sse,-sse2,-mmx', '-O2', '-o', kernel_object
 	execute 'x86_64-elf-ld', '-z', 'max-page-size=0x1000', '-T', 'src/x86_64/kernel.ld', *objects, '-o', kernel_binary
 end
 

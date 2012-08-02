@@ -3,6 +3,7 @@
 #include "physical_mem_init.hpp"
 #include "memory.hpp"
 #include "../console.hpp"
+#include "apic.hpp"
 
 void Arch::initialize()
 {
@@ -14,12 +15,35 @@ void Arch::initialize()
 	Memory::Initial::initialize();
 
 	Memory::Physical::initialize();
+
+	console.s("Loading APIC").lb();
+
+	//APIC::initialize();
+
+	console.s("Loaded APIC").lb();
+}
+
+void Arch::enable_interrupts()
+{
+	asm("sti");
+}
+
+void Arch::disable_interrupts()
+{
+	asm("cli");
+}
+
+void Arch::halt()
+{
+	asm("hlt");
 }
 
 void Arch::panic()
 {
-	asm("cli");
-	while(1) asm volatile("hlt");
+	disable_interrupts();
+
+	while(true)
+		halt();
 }
 
 void bp()

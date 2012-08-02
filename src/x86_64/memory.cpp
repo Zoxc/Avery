@@ -37,18 +37,17 @@ namespace Memory
 		}
 	}
 
-	VirtualPage *simple_position = (VirtualPage *)simple_allocator_start;
+	size_t simple_remaining = (simple_allocator_end - simple_allocator_start) / Arch::page_size;
 
 	VirtualPage *simple_allocate(size_t pages)
 	{
-		auto result = simple_position;
-		auto next = simple_position + pages;
+		assert(pages < simple_remaining, "Out of simple virtual memory pages");
 
-		assert((ptr_t)next < simple_allocator_end, "Out of simple virtual memory pages");
+		auto result = simple_allocator_end - simple_remaining * Arch::page_size;
 
-		simple_position = next;
+		simple_remaining -= pages;
 
-		return result;
+		return (VirtualPage *)result;
 	}
 
 	bool page_table_entry_present(page_table_entry_t entry)
@@ -156,8 +155,13 @@ void Memory::Initial::initialize()
 
 	// Map framebuffer to virtual memory
 
-	assert(Boot::parameters.frame_buffer_size < ptl1_size, "Framebuffer too large");
-	map_page_table(ptl1_frame, 0, Boot::parameters.frame_buffer_size, (PhysicalPage *)Boot::parameters.frame_buffer, write_bit);
+	void *fb;
+	size_t fb_size;
+
+	console.get_buffer_info(fb, fb_size);
+
+	assert(fb_size < ptl1_size, "Framebuffer too large");
+	map_page_table(ptl1_frame, 0, fb_size, (PhysicalPage *)fb, write_bit);
 
 	// Map kernel segments
 
@@ -191,7 +195,5 @@ void Memory::Initial::initialize()
 
 	load_pml4(physical((VirtualPage *)&ptl4_static));
 
-	Boot::parameters.frame_buffer = (void *)framebuffer_start;
-
-	console.update_frame_buffer();
+	console.new_buffer((void *)framebuffer_start);
 }

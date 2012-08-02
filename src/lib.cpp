@@ -46,6 +46,11 @@ void panic(const char *message)
 
 extern "C"
 {
+	void __cxa_pure_virtual()
+	{
+		panic("Abstract virtual function called");
+	}
+
 	void memcpy(void *dst, const void *src, size_t size)
 	{
 		uint8_t *d = (uint8_t *)dst;

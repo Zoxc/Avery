@@ -4,13 +4,12 @@
 
 void kernel()
 {
-	Runtime::initialize();
-	
-	console.initialize();
-	
-	console.clear().s("Welcome to Avery!").endl();
+	console.s("Welcome to Avery!").endl();
 	
 	Arch::initialize();
-	
-	Arch::panic();
+
+	//Arch::enable_interrupts();
+
+	while(true)
+		Arch::halt();
 }

@@ -2,8 +2,6 @@ src/x86_64/arch.cpp
 src/x86_64/arch.hpp
 src/x86_64/boot.cpp
 src/x86_64/boot.hpp
-src/x86_64/debug.cpp
-src/x86_64/debug.hpp
 src/x86_64/gdt.cpp
 src/x86_64/idt.cpp
 src/x86_64/io.hpp
@@ -22,3 +20,11 @@ src/lib.cpp
 src/lib.hpp
 Rakefile
 src/x86_64/boot.S
+src/x86_64/apic.cpp
+src/x86_64/apic.hpp
+src/x86_64/load-segments.S
+src/consoles/fb.hpp
+src/consoles/fb.cpp
+src/consoles/display.hpp
+src/consoles/display.cpp
+src/arch.hpp

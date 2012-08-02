@@ -37,9 +37,15 @@ namespace Memory
 	const size_t ptl3_size = table_entries * ptl2_size;
 	const size_t ptl4_size = table_entries * ptl3_size;
 
-	const size_t write_bit = 2;
-	const size_t present_bit = 1;
-	const size_t nx_bit = 0x8000000000000000;
+	const size_t write_bit = 1ul << 1;
+	const size_t present_bit = 1ul << 0;
+	const size_t writethrough_bit = 1ul << 3;
+	const size_t cache_disable_bit = 1ul << 4;
+	const size_t pat_ptl1_bit = 1ul << 7;
+	const size_t nx_bit = 1ul << 63;
+
+	const size_t no_cache_flags = writethrough_bit | cache_disable_bit | pat_ptl1_bit;
+	const size_t rw_data_flags = nx_bit | write_bit | present_bit;
 
 	const size_t page_flags = 0x80000000000003FF;
 	
@@ -62,6 +68,8 @@ namespace Memory
 
 	static inline page_table_entry_t page_table_entry(PhysicalPage *page, size_t flags)
 	{
+		assert_page_aligned((ptr_t)page);
+
 		return (page_table_entry_t)((ptr_t)page | flags);
 	}
 

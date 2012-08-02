@@ -18,7 +18,26 @@ namespace Arch
 	extern interrupt_handler_t interrupt_handlers[256];
 	
 	void register_interrupt_handler(uint8_t index, interrupt_handler_t handler);
-	
+
+	static inline size_t read_msr(uint32_t reg)
+	{
+	   uint32_t low, high;
+
+	   asm volatile ("rdmsr" : "=a" (low), "=d" (high) : "c" (reg));
+
+	   return (size_t)low | ((size_t)high << 32);
+	}
+
+	static inline void write_msr(uint32_t reg, size_t value)
+	{
+	   asm volatile ("wrmsr" : : "a" (value), "d" (value >> 32), "c" (reg));
+	}
+
+	void enable_interrupts();
+	void disable_interrupts();
+
+	void halt();
+
 	void initialize_idt();
 	void initialize_gdt();
 	

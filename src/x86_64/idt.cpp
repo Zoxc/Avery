@@ -16,7 +16,7 @@ namespace Arch
 		uint8_t ist_reserved0;
 
 		unsigned int type : 4;
-		unsigned int zero: 1;
+		unsigned int zero : 1;
 		unsigned int privilege_level : 2;
 		unsigned int present : 1;
 
@@ -74,7 +74,7 @@ extern "C" void Arch::isr_handler(const InterruptInfo &info)
 		
 		asm("mov %%cr2, %%rax" : "=a"(cr2)); 
 		
-		console.panic().s("Unhandled interrupt: ").u(info.interrupt_index).lb().lb().fg(Console::light_gray)
+		console.panic().s("Unhandled interrupt: ").u(info.interrupt_index).lb().lb().color(Console::Default)
 			.s("errnr:  ").x(info.error_code).a()
 			.s("indx:   ").x(info.interrupt_index).a()
 			.lb()
