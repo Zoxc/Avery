@@ -15,13 +15,6 @@
 
 #define MULTIBOOT_MAGIC        0x2BADB002
 
-struct multiboot_header
-{
-	uint32_t magic;
-	uint32_t flags;
-	uint32_t checksum;
-} __attribute__((aligned (4))) __attribute__((packed));
-
 struct multiboot_mmap
 {
 	uint32_t struct_size;

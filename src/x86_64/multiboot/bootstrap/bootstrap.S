@@ -24,6 +24,7 @@ bootstrap.64:
 	movw %ax, %es
 	movw %ax, %fs
 	movw %ax, %gs
+	movw %ax, %ss
 	
 	# Zero the upper bits of %rcx
 	#andq $0xFFFFFFFF, %rcx

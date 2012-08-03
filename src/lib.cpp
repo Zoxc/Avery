@@ -63,8 +63,9 @@ extern "C"
 
 	void *memset(void *ptr, uint8_t value, unsigned long num)
 	{
-		uint8_t *dest = (uint8_t *)ptr;
-		for (; num != 0; num--) *dest++ = value;
+		for(uint8_t *dest = (uint8_t *)ptr; num != 0; num--)
+			*dest++ = value;
+
 		return ptr;
 	}
 

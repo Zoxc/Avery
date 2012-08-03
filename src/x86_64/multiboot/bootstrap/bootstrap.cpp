@@ -92,6 +92,7 @@ extern "C" void setup_long_mode(void *multiboot, uint32_t magic)
 	gdt64_pointer.base = offset(gdt);
 	
 	// setup the higher-half
+	pml4t[510] = offset(&pml4t) | 3;
 	pml4t[511] = offset(&pdpt) | 3;
 	pdpt[510] = offset(&pdt) | 3;
 	pdt[0] = offset(&pt) | 3;
