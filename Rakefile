@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'lokar'
 
 def execute(command, *args)
 	puts [command, *args].join(' ')
@@ -8,11 +9,15 @@ def execute(command, *args)
 	raise "#{command} failed with error code #{$?.exitstatus}" if $?.exitstatus != 0
 end
 
+def preprocess(input, output, binding)
+	content = File.open(input, 'r') { |f| f.read }
+	output_content = Lokar.render(content, input, binding)
+	File.open(output, 'w') { |f| f.write output_content }
+end
+
 kernel_binary = 'build/kernel.elf'
 multiboot = true
-	
-desc "Build Avery"
-task :build do
+build = proc do
 	kernel_bitcode = 'build/kernel.bc'
 	kernel_bitcode_bootstrap = 'build/kernel-bootstrap.bc'
 	kernel_object = 'build/kernel.o'
@@ -88,10 +93,30 @@ task :build do
 	
 	execute 'llvm-link', *bitcodes, "-o=#{kernel_bitcode}"
 	execute 'llc', kernel_bitcode, '-filetype=obj', '-disable-red-zone', '-code-model=kernel', '-relocation-model=static', '-mattr=-sse,-sse2,-mmx', '-O2', '-o', kernel_object
-	execute 'x86_64-elf-ld', '-z', 'max-page-size=0x1000', '-T', 'src/x86_64/kernel.ld', *objects, '-o', kernel_binary
+	
+	preprocess('src/x86_64/kernel.ld', 'build/kernel.ld', binding)
+	
+	execute 'x86_64-elf-ld', '-z', 'max-page-size=0x1000', '-T', 'build/kernel.ld', *objects, '-o', kernel_binary
 end
 
-desc "Test Avery with QEMU"
+task :build do
+	build.call
+end
+
+task :build_efi do
+	multiboot = false
+	build.call
+end
+
+task :test_bios do
+	execute *%w{bin\mcopy -D o -D O -i emu/grubdisk.img@@1M build/kernel.elf ::kernel.elf}
+	
+	Dir.chdir('emu/') do
+		puts "Running QEMU..."
+		execute *%w{qemu/qemu-system-x86_64 -L qemu\Bios -hda grubdisk.img -serial file:serial.txt -d int,cpu_reset -no-reboot -s}
+	end
+end
+
 task :test do
 	Dir.chdir('emu/') do
 		FileUtils.cp "../#{kernel_binary}", "hda/efi/boot"
@@ -110,7 +135,7 @@ task :bochs do
 	end
 end
 
-task :run => [:build, :test]
+task :run => [:build_efi, :test]
 task :tbochs => [:build, :bochs]
 
 task :default => :build

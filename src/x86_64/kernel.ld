@@ -3,9 +3,10 @@ ENTRY(entry)
 
 high_start = 0xFFFFFFFF80000000;
 page_size = 0x1000;
-	
+
 SECTIONS
 {
+% if multiboot
 	. = 0x100000;
 	
 	.multiboot ALIGN(4) : { *(.multiboot) }
@@ -15,6 +16,7 @@ SECTIONS
 		build/src/x86_64/multiboot/bootstrap/*(*)
 		build/kernel-bootstrap.o(*)
 	}
+% end
 	
 	. = ALIGN(page_size);
 	low_end = .;
