@@ -110,6 +110,7 @@ task :bochs do
 	end
 end
 
-task :run => [:build, :run]
+task :run => [:build, :test]
+task :tbochs => [:build, :bochs]
 
 task :default => :build

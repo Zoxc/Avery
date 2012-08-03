@@ -29,3 +29,11 @@ src/physical_mem.hpp
 src/physical_mem.cpp
 src/x86_64/boot/boot.S
 src/x86_64/boot/boot.cpp
+src/x86_64/multiboot/bootstrap/bootstrap.S
+src/x86_64/multiboot/bootstrap/multiboot.hpp
+src/x86_64/multiboot/bootstrap/console.hpp
+src/x86_64/multiboot/bootstrap/common.hpp
+src/x86_64/multiboot/bootstrap/console.cpp
+src/x86_64/multiboot/bootstrap/bootstrap.cpp
+src/x86_64/multiboot/multiboot.hpp
+src/x86_64/multiboot/boot.cpp

@@ -5,19 +5,19 @@ high_start = 0xFFFFFFFF80000000;
 	
 SECTIONS
 {
-
 	. = 0x100000;
 	
 	.multiboot ALIGN(4) : { *(.multiboot) }
 	
-	.bootstrap :
+	.bootstrap ALIGN(4) :
 	{
 		build/src/x86_64/multiboot/bootstrap/*(*)
 		build/kernel-bootstrap.o(*)
 	}
 	
 	. = ALIGN(4096);
-	high_offset = high_start - .;
+	low_end = .;
+	high_offset = high_start - low_end;
 	
 	. = high_start;
 	
@@ -54,5 +54,7 @@ SECTIONS
 		*(.gnu.linkonce.b*)
 	}
 	
+	. = ALIGN(4096);
 	kernel_end = .;
+	kernel_size = (kernel_end - kernel_start) / 0x1000;
 }

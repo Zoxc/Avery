@@ -8,14 +8,18 @@ extern const struct multiboot_header header;
 
 const struct multiboot_header header __attribute__ ((section (".multiboot"))) = {MULTIBOOT_HEADER_MAGIC, MULTIBOOT_HEADER_FLAGS, MULTIBOOT_CHECKSUM(MULTIBOOT_HEADER_FLAGS)};
 
-typedef uint64_t table_t[512] __attribute__((aligned(0x1000)));
-	
-static table_t pdpt_low;
-static table_t pdpt_high;
+#define MEMORY_PAGE_ALIGN __attribute__((aligned(0x1000)));
 
-static table_t pml4t;
-static table_t pdt;
-static table_t pt;
+typedef uint64_t table_t[512];
+	
+static table_t pdpt_low MEMORY_PAGE_ALIGN;
+static table_t pdt_low MEMORY_PAGE_ALIGN;
+static table_t pt_low MEMORY_PAGE_ALIGN;
+
+static table_t pml4t MEMORY_PAGE_ALIGN;
+static table_t pdpt MEMORY_PAGE_ALIGN;
+static table_t pdt MEMORY_PAGE_ALIGN;
+static table_t pt MEMORY_PAGE_ALIGN;
 
 struct descriptor
 {
@@ -64,6 +68,9 @@ static void cpuid(uint32_t input, struct cpuid_result *result)
 	asm ("cpuid" : "=a"(result->eax), "=b"(result->ebx), "=c"(result->ecx), "=d"(result->edx) : "a"(input));
 }
 
+extern void *low_end;
+extern void *kernel_size;
+
 extern "C" void setup_long_mode(void *multiboot, uint32_t magic)
 {
 	console_fg(console_light_gray);
@@ -85,26 +92,28 @@ extern "C" void setup_long_mode(void *multiboot, uint32_t magic)
 	gdt64_pointer.base = offset(gdt);
 	
 	// setup the higher-half
-	pml4t[511] = offset(&pdpt_high) | 3;
-	pdpt_high[510] = offset(&pdt) | 3;
-	
-	// setup the lower-half
-	pml4t[0] = offset(&pdpt_low) | 3;
-	pdpt_low[0] = offset(&pdt) | 3;
-	
+	pml4t[511] = offset(&pdpt) | 3;
+	pdpt[510] = offset(&pdt) | 3;
 	pdt[0] = offset(&pt) | 3;
-	
-	// map pml4t to itself
-	pml4t[510] = offset(&pml4t) | 3;
-	
+
+	size_t physical = (size_t)&low_end;
+
+	for(size_t i = 0; i < (size_t)&kernel_size; i++, physical += 0x1000)
+		pt[i] = physical | 3;
+
+	// setup the lower-half
+
+	pml4t[0] = offset(&pdpt_low) | 3;
+	pdpt_low[0] = offset(&pdt_low) | 3;
+	pdt_low[0] = offset(&pt_low) | 3;
+
 	// map the first 2 megabytes
-	unsigned int i, address = 0;
-	for(i = 0; i < 512; i++)
-	{
-		pt[i] = address | 3; // map address and mark it present/writable
-		address += 0x1000;
-	}
-	
+
+	size_t address = 0;
+
+	for(size_t i = 0; i < 512; i++, address += 0x1000)
+		pt_low[i] = address | 3;
+
 	struct cpuid_result result;
 	
 	cpuid(0x80000000, &result);
@@ -133,8 +142,8 @@ extern "C" void setup_long_mode(void *multiboot, uint32_t magic)
 	// load PML4T into CR3
 	asm volatile ("movl %%eax, %%cr3" :: "a"(&pml4t));
 	
-	// set the long mode bit
-	asm volatile ("rdmsr; orl %0, %%eax; wrmsr" :: "i"(1 << 8), "c"(0xC0000080) : "eax", "edx");
+	// set the long mode bit and nx enable bit
+	asm volatile ("rdmsr; orl %0, %%eax; wrmsr" :: "i"((1 << 8) | (1 << 11)), "c"(0xC0000080) : "eax", "edx");
 	
 	// enable PAE
 	asm volatile ("movl %%cr4, %%eax; orl %0, %%eax; movl %%eax, %%cr4" :: "i"(1 << 5) : "eax");
