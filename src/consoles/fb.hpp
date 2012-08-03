@@ -41,6 +41,3 @@ private:
 	void blit_char(size_t x, size_t y, uint8_t index, color_t color);
 	void clear_frame(size_t x, size_t y, size_t width, size_t height);
 };
-
-extern Console console;
-

@@ -45,7 +45,6 @@ namespace Params
 		size_t segment_count;
 		struct MemoryRange ranges[memory_range_max];
 		struct Segment segments[segment_max];
-		ConsoleBackend *console_backend;
 	};
 
 	extern Info info;

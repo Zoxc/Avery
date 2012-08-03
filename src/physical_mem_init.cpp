@@ -175,6 +175,11 @@ void Memory::Initial::initialize_physical()
 		console.s("- Segment ").x(Params::info.segments[i].base).s(" - ").x(Params::info.segments[i].end).lb();
 	}
 
+	for(Entry *entry = list; entry; entry = entry->next)
+	{
+		console.s("- Memory ").x(entry->base).s(" - ").x(entry->end).lb();
+	}
+
 	punch_holes(&Params::info.segments[0], Params::info.segment_count);
 	
 	if(!list)

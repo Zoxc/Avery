@@ -2,6 +2,7 @@ OUTPUT_FORMAT(elf64-x86-64)
 ENTRY(entry)
 
 high_start = 0xFFFFFFFF80000000;
+page_size = 0x1000;
 	
 SECTIONS
 {
@@ -15,7 +16,7 @@ SECTIONS
 		build/kernel-bootstrap.o(*)
 	}
 	
-	. = ALIGN(4096);
+	. = ALIGN(page_size);
 	low_end = .;
 	high_offset = high_start - low_end;
 	
@@ -23,13 +24,16 @@ SECTIONS
 	
 	kernel_start = .;
 	
-	.text ALIGN(0x1000) : AT(ADDR(.text) - high_offset)
+	.text : AT(ADDR(.text) - high_offset)
 	{
 		*(.text)
 		*(.gnu.linkonce.t*)
 	}
 	
-	.rodata ALIGN(0x1000) : AT(ADDR(.rodata) - high_offset)
+	. = ALIGN(page_size);
+	rodata_start = .;
+	
+	.rodata : AT(ADDR(.rodata) - high_offset)
 	{
 		ctors_start = .;
 		*(.ctor*)
@@ -42,19 +46,22 @@ SECTIONS
 		*(.font)
 	}
 	
-	.data ALIGN(0x1000) : AT(ADDR(.data) - high_offset)
+	. = ALIGN(page_size);
+	data_start = .;
+	
+	.data : AT(ADDR(.data) - high_offset)
 	{
 		*(.data)
 		*(.gnu.linkonce.d*)
 	}
 	
-	.bss ALIGN(0x1000) : AT(ADDR(.bss) - high_offset)
+	.bss ALIGN(page_size) : AT(ADDR(.bss) - high_offset)
 	{
 		*(.bss)
 		*(.gnu.linkonce.b*)
 	}
 	
-	. = ALIGN(4096);
+	. = ALIGN(page_size);
 	kernel_end = .;
-	kernel_size = (kernel_end - kernel_start) / 0x1000;
+	kernel_size = (kernel_end - kernel_start) / page_size;
 }

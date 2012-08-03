@@ -1,6 +1,5 @@
 #include "arch.hpp"
 #include "../console.hpp"
-#include "io.hpp"
 #include "memory.hpp"
 
 namespace Arch

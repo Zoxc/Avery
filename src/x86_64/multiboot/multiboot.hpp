@@ -22,6 +22,14 @@ struct multiboot_header
 	uint32_t checksum;
 } __attribute__((aligned (4))) __attribute__((packed));
 
+struct multiboot_mmap
+{
+	uint32_t struct_size;
+	uint64_t base;
+	uint64_t size;
+	uint32_t type;
+} __attribute__((packed));
+
 typedef struct
 {
 	uint32_t flags;

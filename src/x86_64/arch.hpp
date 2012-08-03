@@ -21,16 +21,39 @@ namespace Arch
 
 	static inline size_t read_msr(uint32_t reg)
 	{
-	   uint32_t low, high;
+		uint32_t low, high;
 
-	   asm volatile ("rdmsr" : "=a" (low), "=d" (high) : "c" (reg));
+		asm volatile ("rdmsr" : "=a" (low), "=d" (high) : "c" (reg));
 
-	   return (size_t)low | ((size_t)high << 32);
+		return (size_t)low | ((size_t)high << 32);
 	}
 
 	static inline void write_msr(uint32_t reg, size_t value)
 	{
-	   asm volatile ("wrmsr" : : "a" (value), "d" (value >> 32), "c" (reg));
+		asm volatile ("wrmsr" : : "a" (value), "d" (value >> 32), "c" (reg));
+	}
+
+	static inline void outb(uint16_t port, uint8_t value)
+	{
+		asm volatile("outb %1, %0" : : "dN" (port), "a" (value));
+	}
+
+	static inline uint8_t inb(uint16_t port)
+	{
+		uint8_t ret;
+
+		asm volatile("inb %1, %0" : "=a" (ret) : "dN" (port));
+
+		return ret;
+	}
+
+	static inline uint16_t inw(uint16_t port)
+	{
+		uint16_t ret;
+
+		asm volatile ("inw %1, %0" : "=a" (ret) : "dN" (port));
+
+		return ret;
 	}
 
 	void enable_interrupts();
