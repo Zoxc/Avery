@@ -1,12 +1,12 @@
 .code32
 .align 16
-.local stack
-.comm stack, 0x4000
+.local stack.32
+.comm stack.32, 0x4000
 
 .global entry
 entry:
 	cli
-	movl $(stack + 0x4000), %esp
+	movl $(stack.32 + 0x4000), %esp
 	pushl %eax
 	pushl %ebx
 	call setup_long_mode
@@ -16,6 +16,7 @@ loop.32:
 
 .code64
 
+.global stack
 .global bootstrap.64
 bootstrap.64:
 	# Load data segments
@@ -26,9 +27,9 @@ bootstrap.64:
 	movw %ax, %gs
 	movw %ax, %ss
 	
-	# Zero the upper bits of %rcx
-	#andq $0xFFFFFFFF, %rcx
-	
+	# Load a new higher-half stack
+	movabs $(stack + 0x8000), %rsp
+
 	# Call the higher-half entry
 	mov %rcx, %rdi
 	movabs $boot_entry, %rax

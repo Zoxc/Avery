@@ -7,6 +7,9 @@
 
 VGAConsoleBackend vga_console;
 
+extern char stack[0x8000];
+char stack[0x8000] __attribute__((aligned(16)));
+
 extern void *low_end;
 extern void *kernel_start;
 extern void *rodata_start;
