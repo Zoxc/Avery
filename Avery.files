@@ -38,3 +38,5 @@ src/x86_64/multiboot/multiboot.hpp
 src/x86_64/multiboot/boot.cpp
 src/consoles/vga.hpp
 src/consoles/vga.cpp
+src/x86_64/kernel.ld
+src/x86_64/interrupts.S

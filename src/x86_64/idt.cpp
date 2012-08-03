@@ -104,7 +104,7 @@ extern "C" void Arch::irq_handler(const InterruptInfo &info)
         // Send reset signal to slave.
         Arch::outb(0xA0, 0x20);
     }
-    // Send reset signal to master. (As well as slave, if necessary).
+	// Send reset signal to master.
     Arch::outb(0x20, 0x20);
 	
 	isr_handler(info);
@@ -224,6 +224,9 @@ void Arch::initialize_idt()
 	set_gate(45, irq13);
 	set_gate(46, irq14);
 	set_gate(47, irq15);
+
+	outb(0x21, 0xFF);
+	outb(0xA1, 0xFF);
 
 	asm volatile ("lidt %0" :: "m"(idt_ptr));
 }

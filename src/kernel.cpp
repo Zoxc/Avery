@@ -19,7 +19,7 @@ void kernel()
 
 	Arch::initialize();
 
-	//Arch::enable_interrupts();
+	Arch::enable_interrupts();
 
 	while(true)
 		Arch::halt();

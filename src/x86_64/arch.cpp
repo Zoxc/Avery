@@ -18,7 +18,7 @@ void Arch::initialize()
 {
 	console.s("Loading APIC").lb();
 
-	//APIC::initialize();
+	APIC::initialize();
 
 	console.s("Loaded APIC").lb();
 }
