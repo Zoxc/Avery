@@ -2,6 +2,7 @@
 #include "memory.hpp"
 #include "../console.hpp"
 #include "apic.hpp"
+#include "mp.hpp"
 
 void Arch::initialize_basic()
 {
@@ -16,11 +17,8 @@ void Arch::initialize_memory()
 
 void Arch::initialize()
 {
-	console.s("Loading APIC").lb();
-
 	APIC::initialize();
-
-	console.s("Loaded APIC").lb();
+	MP::initialize();
 }
 
 void Arch::enable_interrupts()

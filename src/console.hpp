@@ -13,7 +13,7 @@ public:
 		Default,
 		Panic,
 		Strong,
-		Number,
+		Value,
 		ColorCount
 	};
 
@@ -40,6 +40,14 @@ public:
 	
 	Console &c(const char c);
 	Console &s(const char *str);
+
+	template<size_t length> Console &str_array(const char (&string)[length])
+	{
+		for(size_t i = 0; i < length; ++i)
+			c(string[i]);
+
+		return *this;
+	}
 
 	void initialize(ConsoleBackend *backend);
 

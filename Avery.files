@@ -40,3 +40,5 @@ src/consoles/vga.hpp
 src/consoles/vga.cpp
 src/x86_64/kernel.ld
 src/x86_64/interrupts.S
+src/x86_64/mp.hpp
+src/x86_64/mp.cpp

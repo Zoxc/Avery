@@ -6,7 +6,7 @@ Console console;
 
 void (*Console::flush_line)() = 0;
 
-Console::Console() : text_color(Default), hex_fg(Number)
+Console::Console() : text_color(Default), hex_fg(Value)
 {
 }
 

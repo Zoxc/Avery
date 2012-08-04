@@ -38,6 +38,7 @@ namespace APIC
 
 	void timer(const Arch::InterruptInfo &)
 	{
+		console.s("Timer working!").endl();
 		reg(reg_eoi) = 0;
 	}
 

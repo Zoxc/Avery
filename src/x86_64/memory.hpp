@@ -45,6 +45,7 @@ namespace Memory
 	const size_t nx_bit = 1ul << 63;
 
 	const size_t no_cache_flags = writethrough_bit | cache_disable_bit | pat_ptl1_bit;
+	const size_t r_data_flags = nx_bit | write_bit | present_bit;
 	const size_t rw_data_flags = nx_bit | write_bit | present_bit;
 
 	const size_t page_flags = 0x80000000000003FF;
@@ -90,7 +91,8 @@ namespace Memory
 
 	const ptr_t physical_allocator_memory = kernel_location + ptl2_size;
 	const ptr_t framebuffer_start = physical_allocator_memory + ptl1_size;
-	const ptr_t simple_allocator_start = framebuffer_start + ptl1_size;
+	const ptr_t low_memory_start = framebuffer_start + ptl1_size;
+	const ptr_t simple_allocator_start = low_memory_start + ptl1_size;
 	const ptr_t simple_allocator_end = physical_allocator_memory + ptl2_size;
 	
 	VirtualPage *simple_allocate(size_t pages = 1);

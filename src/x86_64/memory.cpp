@@ -14,6 +14,7 @@ namespace Memory
 	table_t ptl1_kernel MEMORY_PAGE_ALIGN;
 	table_t ptl1_physical MEMORY_PAGE_ALIGN;
 	table_t ptl1_frame MEMORY_PAGE_ALIGN;
+	table_t ptl1_low_memory MEMORY_PAGE_ALIGN;
 	
 	namespace Initial
 	{
@@ -148,10 +149,15 @@ void Memory::Initial::initialize()
 
 	ptl2_dynamic[0] = table_entry_from_data(&ptl1_physical);
 	ptl2_dynamic[1] = table_entry_from_data(&ptl1_frame);
+	ptl2_dynamic[2] = table_entry_from_data(&ptl1_low_memory);
+
+	// Map the low memory area
+
+	map_page_table(ptl1_low_memory, 0, 0x100000, 0, nx_bit);
 
 	// Map the physical memory allocator
 
-	map_page_table(ptl1_physical, 0, overhead, (PhysicalPage *)entry->base, write_bit);
+	map_page_table(ptl1_physical, 0, overhead, (PhysicalPage *)entry->base, write_bit | nx_bit);
 
 	// Map framebuffer to virtual memory
 
@@ -161,7 +167,7 @@ void Memory::Initial::initialize()
 	console.get_buffer_info(fb, fb_size);
 
 	assert(fb_size < ptl1_size, "Framebuffer too large");
-	map_page_table(ptl1_frame, 0, fb_size, (PhysicalPage *)fb, write_bit);
+	map_page_table(ptl1_frame, 0, fb_size, (PhysicalPage *)fb, write_bit | nx_bit);
 
 	// Map kernel segments
 
