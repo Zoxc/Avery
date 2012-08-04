@@ -108,16 +108,16 @@ task :build_efi do
 	build.call
 end
 
-task :test_bios do
+task :qemu do
 	execute *%w{bin\mcopy -D o -D O -i emu/grubdisk.img@@1M build/kernel.elf ::kernel.elf}
 	
 	Dir.chdir('emu/') do
 		puts "Running QEMU..."
-		execute *%w{qemu/qemu-system-x86_64 -L qemu\Bios -hda grubdisk.img -serial file:serial.txt -d int,cpu_reset -no-reboot -s}
+		execute *%w{qemu/qemu-system-x86_64 -L qemu\Bios -hda grubdisk.img -serial file:serial.txt -d int,cpu_reset -no-reboot -s -smp 2}
 	end
 end
 
-task :test do
+task :qemu_efi do
 	Dir.chdir('emu/') do
 		FileUtils.cp "../#{kernel_binary}", "hda/efi/boot"
 		puts "Running QEMU..."
@@ -125,17 +125,17 @@ task :test do
 	end
 end
 
-desc "Test Avery with Bochs"
 task :bochs do
 	execute *%w{bin\mcopy -D o -D O -i emu/grubdisk.img@@1M build/kernel.elf ::kernel.elf}
 	
 	Dir.chdir('emu/') do
 		puts "Running Bochs..."
-		execute 'bochs', '-q', '-f', 'bochs/bochsrc.bxrc'
+		execute 'bochs', '-q', '-f', 'avery.bxrc'
 	end
 end
 
-task :run => [:build_efi, :test]
-task :tbochs => [:build, :bochs]
+task :b_qemu_efi => [:build_efi, :qemu_efi]
+task :b_qemu => [:build, :qemu]
+task :b_bochs => [:build, :bochs]
 
 task :default => :build
