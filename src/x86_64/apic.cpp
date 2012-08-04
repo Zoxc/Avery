@@ -8,6 +8,7 @@ namespace APIC
 	volatile uint8_t *registers;
 
 	const size_t reg_version = 0x30;
+	const size_t reg_eoi = 0xB0;
 	const size_t reg_siv = 0xF0;
 	const size_t reg_task_priority = 0x80;
 	const size_t reg_lvt_timer = 0x320;
@@ -37,6 +38,7 @@ namespace APIC
 
 	void timer(const Arch::InterruptInfo &)
 	{
+		reg(reg_eoi) = 0;
 	}
 
 	void initialize()
