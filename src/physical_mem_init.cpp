@@ -183,9 +183,15 @@ void Memory::Initial::initialize_physical()
 	entry = find_biggest_entry();
 
 	overhead = 0;
+	size_t memory_in_pages = 0;
 	
 	for(Entry *entry = list; entry; entry = entry->next)
+	{
+		memory_in_pages += (entry->end - entry->base) / Arch::page_size;
 		overhead += sizeof(Physical::Hole) + sizeof(Physical::Hole::unit_t) * align(entry->end - entry->base, Physical::Hole::byte_map_size) / Physical::Hole::byte_map_size;
+	}
+
+	console.s("Available memory: ").u(memory_in_pages * Arch::page_size / 0x100000).s(" MiB").endl();
 	
 	assert(overhead <= entry->end - entry->base, "Memory allocation overhead is larger than the biggest memory block");
 	assert(overhead <= ptl1_size, "Memory map doesn't fit in 2 MB.");
