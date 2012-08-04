@@ -59,7 +59,10 @@ namespace Memory
 	const ptr_t mapped_pml1ts = 0xFFFFFF0000000000;
 	const ptr_t mapped_pml2ts = kernel_location - ptl2_size;
 	const ptr_t mapped_pml3ts = kernel_location + ptl1_size * 511;
-	
+
+	void map(VirtualPage *address);
+	void unmap(VirtualPage *address);
+
 	void map_address(VirtualPage *address, PhysicalPage *physical, size_t flags);
 
 	static inline void assert_page_aligned(size_t address)
@@ -79,7 +82,7 @@ namespace Memory
 		return (PhysicalPage *)((ptr_t)entry & ~(page_flags));
 	}
 
-	page_table_entry_t get_page_entry(VirtualPage *pointer);
+	page_table_entry_t *get_page_entry(VirtualPage *pointer);
 	page_table_entry_t *ensure_page_entry(VirtualPage *pointer);
 
 	PhysicalPage *physical(VirtualPage *virtual_address);
@@ -92,8 +95,9 @@ namespace Memory
 	const ptr_t physical_allocator_memory = kernel_location + ptl2_size;
 	const ptr_t framebuffer_start = physical_allocator_memory + ptl1_size;
 	const ptr_t low_memory_start = framebuffer_start + ptl1_size;
-	const ptr_t simple_allocator_start = low_memory_start + ptl1_size;
-	const ptr_t simple_allocator_end = physical_allocator_memory + ptl2_size;
+
+	const ptr_t allocator_start = low_memory_start + ptl1_size;
+	const ptr_t allocator_end = physical_allocator_memory + ptl2_size - page_size; // Subtract page_size to avoid overflow
 	
 	VirtualPage *simple_allocate(size_t pages = 1);
 

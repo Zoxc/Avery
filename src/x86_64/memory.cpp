@@ -38,19 +38,6 @@ namespace Memory
 		}
 	}
 
-	size_t simple_remaining = (simple_allocator_end - simple_allocator_start) / Arch::page_size;
-
-	VirtualPage *simple_allocate(size_t pages)
-	{
-		assert(pages < simple_remaining, "Out of simple virtual memory pages");
-
-		auto result = simple_allocator_end - simple_remaining * Arch::page_size;
-
-		simple_remaining -= pages;
-
-		return (VirtualPage *)result;
-	}
-
 	bool page_table_entry_present(page_table_entry_t entry)
 	{
 		return (ptr_t)entry & present_bit;
@@ -91,7 +78,7 @@ namespace Memory
 		func(ptl4_index, ptl3_index, ptl2_index, ptl1_index);
 	}
 
-	page_table_entry_t get_page_entry(VirtualPage *pointer)
+	page_table_entry_t *get_page_entry(VirtualPage *pointer)
 	{
 		ptr_t phy_ptr;
 
@@ -99,7 +86,7 @@ namespace Memory
 			phy_ptr = mapped_pml1ts + ptl4_index * ptl2_size + ptl3_index * ptl1_size + ptl2_index * page_size + ptl1_index * sizeof(size_t);
 		});
 
-		return *(page_table_entry_t *)phy_ptr;
+		return (page_table_entry_t *)phy_ptr;
 	}
 
 	page_table_entry_t *ensure_page_entry(VirtualPage *pointer)
@@ -127,7 +114,23 @@ namespace Memory
 
 Memory::PhysicalPage *Memory::physical(VirtualPage *virtual_address)
 {
-	return physical_page_from_table_entry(get_page_entry(virtual_address));
+	return physical_page_from_table_entry(*get_page_entry(virtual_address));
+}
+
+void Memory::map(VirtualPage *address)
+{
+	*ensure_page_entry(address) = page_table_entry(Physical::allocate_page(), rw_data_flags);
+}
+
+void Memory::unmap(VirtualPage *address)
+{
+	auto page_entry = get_page_entry(address);
+
+	if((size_t)*page_entry & present_bit)
+	{
+		Physical::free_page(physical_page_from_table_entry(*page_entry));
+		*page_entry = 0;
+	}
 }
 
 void Memory::map_address(VirtualPage *address, PhysicalPage *physical, size_t flags)

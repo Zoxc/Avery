@@ -1,6 +1,6 @@
 #include "arch.hpp"
 #include "../console.hpp"
-#include "memory.hpp"
+#include "../memory.hpp"
 
 namespace APIC
 {
@@ -48,7 +48,7 @@ namespace APIC
 
 		auto mapped_physical = (Memory::PhysicalPage *)(((base >> 12) & 0xFFFFFFFFFF) << 12);
 
-		auto mapped_virtual = Memory::simple_allocate();
+		auto mapped_virtual = Memory::allocate_pages(1)->base;
 
 		registers = (uint8_t *)mapped_virtual;
 

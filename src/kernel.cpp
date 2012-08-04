@@ -2,6 +2,7 @@
 #include "lib.hpp"
 #include "console.hpp"
 #include "params.hpp"
+#include "memory.hpp"
 #include "physical_mem_init.hpp"
 #include "physical_mem.hpp"
 
@@ -16,6 +17,8 @@ void kernel()
 	Arch::initialize_memory();
 
 	Memory::Physical::initialize();
+
+	Memory::initialize();
 
 	Arch::initialize();
 

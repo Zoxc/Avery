@@ -42,3 +42,7 @@ src/x86_64/kernel.ld
 src/x86_64/interrupts.S
 src/x86_64/mp.hpp
 src/x86_64/mp.cpp
+src/memory.hpp
+src/memory.cpp
+src/util/linked-list.hpp
+src/util/fast-list.hpp
