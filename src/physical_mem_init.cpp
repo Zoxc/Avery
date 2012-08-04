@@ -170,16 +170,6 @@ void Memory::Initial::initialize_physical()
 	if(!list)
 		console.panic().s("No usable memory found!").endl();
 
-	for(size_t i = 0; i < Params::info.segment_count; ++i)
-	{
-		console.s("- Segment ").x(Params::info.segments[i].base).s(" - ").x(Params::info.segments[i].end).lb();
-	}
-
-	for(Entry *entry = list; entry; entry = entry->next)
-	{
-		console.s("- Memory ").x(entry->base).s(" - ").x(entry->end).lb();
-	}
-
 	punch_holes(&Params::info.segments[0], Params::info.segment_count);
 	
 	if(!list)
@@ -191,20 +181,13 @@ void Memory::Initial::initialize_physical()
 		console.panic().s("No usable memory found after removing non-page aligned holes!").endl();
 	
 	entry = find_biggest_entry();
-	
-	console.s("Storing allocator data from ").x(entry->base).s(" - ").x(entry->end).lb();
-	
+
 	overhead = 0;
 	
 	for(Entry *entry = list; entry; entry = entry->next)
-	{
 		overhead += sizeof(Physical::Hole) + sizeof(Physical::Hole::unit_t) * align(entry->end - entry->base, Physical::Hole::byte_map_size) / Physical::Hole::byte_map_size;
-		
-		console.s("- Memory ").x(entry->base).s(" - ").x(entry->end).lb();
-	}
 	
 	assert(overhead <= entry->end - entry->base, "Memory allocation overhead is larger than the biggest memory block");
 	assert(overhead <= ptl1_size, "Memory map doesn't fit in 2 MB.");
-	
-	console.s("Overhead is ").x(overhead).s(" bytes").lb();
+
 }
