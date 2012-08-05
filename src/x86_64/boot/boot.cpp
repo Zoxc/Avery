@@ -3,6 +3,7 @@
 #include "../../console.hpp"
 #include "../../lib.hpp"
 #include "../../consoles/fb.hpp"
+#include "../acpi.hpp"
 
 struct Parameters
 {
@@ -12,6 +13,7 @@ struct Parameters
 	size_t frame_buffer_width;
 	size_t frame_buffer_height;
 	size_t frame_buffer_scanline;
+	ptr_t acpi_table;
 	Params::Info info;
 };
 
@@ -28,6 +30,8 @@ extern "C" void boot_entry(Parameters *parameters)
 		parameters->frame_buffer_size);
 
 	console.initialize(&fb_console);
+
+	ACPI::set_table(parameters->acpi_table);
 
 	Params::info = parameters->info;
 

@@ -41,7 +41,7 @@ namespace Memory
 
 			console.s(is_free(current) ? "Free" : "Used").s(" @ ").x(current).s(" : ").x(current->base).s(" - ").x(current->base + current->pages).endl();
 
-			assert(block_free == current->free);
+			assert(block_free == (current->type == Block::Free));
 
 			current = current->linear_next;
 		}
@@ -105,13 +105,13 @@ namespace Memory
 	{
 		first_block.base = start;
 		first_block.pages = end - start;
-		first_block.free = true;
+		first_block.type = Block::Free;
 
 		free_list.append(&first_block);
 		linear_list.append(&first_block);
 	}
 
-	Block *Allocator::allocate(size_t pages)
+	Block *Allocator::allocate(Block::Type type, size_t pages)
 	{
 		Block *result = allocate_block(); // Allocate a result block first since it can modify free regions
 
@@ -126,12 +126,14 @@ namespace Memory
 					free_block_list.append(result);
 					free_list.remove(current);
 
+					current->type = type;
+
 					return current;
 				}
 
 				linear_list.insert_before(result, current);
 
-				result->free = false;
+				result->type = type;
 				result->base = current->base;
 				result->pages = pages;
 				current->base += pages;
@@ -148,10 +150,20 @@ namespace Memory
 
 	void Allocator::free(Block *block)
 	{
+		assert(block, "Invalid block");
+
 		auto end = block->base + block->pages;
 
-		for(auto page = block->base; page != end; ++page)
-			Memory::unmap(page);
+		if(block->type == Block::PhysicalView)
+		{
+			for(auto page = block->base; page < end; ++page)
+				unmap_address(page);
+		}
+		else
+		{
+			for(auto page = block->base; page != end; ++page)
+				unmap(page);
+		}
 
 		Block *prev = block->linear_prev;
 		Block *next = block->linear_next;
@@ -159,7 +171,7 @@ namespace Memory
 
 		// Merge with a block below
 
-		if(prev && prev->free)
+		if(prev && prev->type == Block::Free)
 		{
 			assert(prev->base + prev->pages == current->base);
 			prev->pages += current->pages;
@@ -172,7 +184,7 @@ namespace Memory
 
 		// Merge with a block above
 
-		if(next && next->free)
+		if(next && next->type == Block::Free)
 		{
 			assert(current->base + current->pages == next->base);
 
@@ -190,7 +202,7 @@ namespace Memory
 
 		if(current == block)
 		{
-			current->free = true;
+			current->type = Block::Free;
 			free_list.append(current);
 		}
 	}
@@ -207,7 +219,7 @@ namespace Memory
 
 	Block *map_physical(PhysicalPage *physical, size_t pages, size_t flags)
 	{
-		Block *block = allocate_pages(pages);
+		Block *block = allocate_block(Block::PhysicalView, pages);
 
 		auto end = block->base + pages;
 
@@ -217,22 +229,12 @@ namespace Memory
 		return block;
 	}
 
-	void unmap_physical(Block *block)
+	Block *allocate_block(Block::Type type, size_t pages)
 	{
-		auto end = block->base + block->pages;
-
-		for(auto p = block->base; p < end; ++p)
-			unmap_address(p);
-
-		free_pages(block);
+		return allocator.allocate(type, pages);
 	}
 
-	Block *allocate_pages(size_t pages)
-	{
-		return allocator.allocate(pages);
-	}
-
-	void free_pages(Block *block)
+	void free_block(Block *block)
 	{
 		return allocator.free(block);
 	}

@@ -1,3 +1,4 @@
+#include "apic.hpp"
 #include "arch.hpp"
 #include "../console.hpp"
 #include "../memory.hpp"
@@ -7,10 +8,13 @@ namespace APIC
 	const size_t base_register = 0x1B;
 	volatile uint8_t *registers;
 
+	const size_t reg_id = 0x20;
 	const size_t reg_version = 0x30;
 	const size_t reg_eoi = 0xB0;
 	const size_t reg_siv = 0xF0;
 	const size_t reg_task_priority = 0x80;
+	const size_t reg_icrl = 0x300;
+	const size_t reg_icrh = 0x310;
 	const size_t reg_lvt_timer = 0x320;
 	const size_t reg_lvt_thermal = 0x330;
 	const size_t reg_lvt_perf = 0x340;
@@ -42,11 +46,35 @@ namespace APIC
 		reg(reg_eoi) = 0;
 	}
 
+	void ipi(size_t target, MessageType type, size_t vector)
+	{
+		reg(reg_icrh) = target << 24;
+		reg(reg_icrl) = (vector & 0xF) | ((type & 7) << 8);
+	}
+
+	size_t local_id()
+	{
+		return reg(reg_id);
+	}
+
+	bool has_base = false;
+	size_t register_base;
+
+	void set_registers(ptr_t registers)
+	{
+		has_base = true;
+		register_base = registers;
+	}
+
 	void initialize()
 	{
 		size_t base = Arch::read_msr(base_register);
+		Memory::PhysicalPage *mapped_physical;
 
-		auto mapped_physical = (Memory::PhysicalPage *)(((base >> 12) & 0xFFFFFFFFFF) << 12);
+		if(has_base)
+			mapped_physical =  (Memory::PhysicalPage *)register_base;
+		else
+			mapped_physical = (Memory::PhysicalPage *)(((base >> 12) & 0xFFFFFFFFFF) << 12);
 
 		auto mapped_virtual = Memory::map_physical(mapped_physical, 1, Memory::rw_data_flags | Memory::no_cache_flags)->base;
 
@@ -69,5 +97,28 @@ namespace APIC
 		reg(reg_siv) = 39 | sw_enable;
 
 		Arch::register_interrupt_handler(32, timer);
+	}
+
+	volatile bool oneshot_done;
+
+	void simple_oneshot_wake(const Arch::InterruptInfo &)
+	{
+		console.s("Timer expired!").endl();
+		oneshot_done = true;
+		reg(reg_eoi) = 0;
+	}
+
+	void simple_oneshot(size_t ticks)
+	{
+		Arch::disable_interrupts();
+
+		Arch::register_interrupt_handler(32, simple_oneshot_wake);
+		oneshot_done = false;
+		reg(reg_timer_init) = ticks;
+
+		Arch::enable_interrupts();
+
+		while(!oneshot_done)
+			Arch::pause();
 	}
 };

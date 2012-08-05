@@ -57,6 +57,11 @@ namespace Arch
 		return ret;
 	}
 
+	static inline void pause()
+	{
+		asm volatile ("pause");
+	}
+
 	void enable_interrupts();
 	void disable_interrupts();
 

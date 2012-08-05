@@ -32,6 +32,9 @@ void Memory::Initial::load_memory_map()
 	{
 		if(entry->type == Params::MemoryUsable)
 		{
+			if(entry->base < Arch::page_size * 2) // Ignore the first two pages
+				entry->base = Arch::page_size * 2;
+
 			entry->next = list;
 			list = entry;
 		}

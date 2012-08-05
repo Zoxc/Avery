@@ -2,7 +2,8 @@
 #include "memory.hpp"
 #include "../console.hpp"
 #include "apic.hpp"
-#include "mp.hpp"
+#include "acpi.hpp"
+#include "cpu.hpp"
 
 void Arch::initialize_basic()
 {
@@ -18,7 +19,8 @@ void Arch::initialize_memory()
 void Arch::initialize()
 {
 	APIC::initialize();
-	MP::initialize();
+	ACPI::initialize();
+	CPU::initialize();
 }
 
 void Arch::enable_interrupts()

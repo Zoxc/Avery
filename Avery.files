@@ -46,3 +46,8 @@ src/memory.hpp
 src/memory.cpp
 src/util/linked-list.hpp
 src/util/fast-list.hpp
+src/x86_64/acpi.hpp
+src/x86_64/acpi.cpp
+src/x86_64/cpu.hpp
+src/x86_64/cpu.cpp
+src/x86_64/cpu.S

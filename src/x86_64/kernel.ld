@@ -7,25 +7,41 @@ page_size = 0x1000;
 SECTIONS
 {
 % if multiboot
-	. = 0x100000;
-	
+	. = 0;
+
 	.multiboot ALIGN(4) : { *(.multiboot) }
-	
+
+	. = 0x100000;
+
 	.bootstrap ALIGN(4) :
 	{
 		build/src/x86_64/multiboot/bootstrap/*(*)
 		build/kernel-bootstrap.o(*)
 	}
 % end
-	
+
 	. = ALIGN(page_size);
 	low_end = .;
 	high_offset = high_start - low_end;
-	
+
 	. = high_start;
 	
 	kernel_start = .;
-	
+
+	ap_bootstrap_start = .;
+	ap_bootstrap_mapped = 0x1000;
+
+	.ap_bootstrap ap_bootstrap_mapped : AT(ap_bootstrap_start - high_offset)
+	{
+		build/src/x86_64/cpu.S.o(*)
+	}
+
+	. = ap_bootstrap_start + (. - 0x1000);
+
+	ap_bootstrap_end = .;
+
+	. = ALIGN(page_size);
+
 	.text : AT(ADDR(.text) - high_offset)
 	{
 		*(.text)

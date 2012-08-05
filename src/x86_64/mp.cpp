@@ -19,12 +19,12 @@ namespace MP
 
 	bool search_area(ptr_t start, ptr_t size, Pointer &result)
 	{
-		void *mapped;
-		Memory::Physical::Block block(mapped, start, size);
+		Memory::ScopedBlock block;
 
-		size_t end = (size_t)mapped + size;
+		start = (size_t)block.map_block(start, size);
+		size_t end = (size_t)start + size;
 
-		for(auto pointer = (Pointer *)mapped; (ptr_t)pointer < end; ++pointer)
+		for(auto pointer = (Pointer *)start; (ptr_t)pointer < end; ++pointer)
 		{
 			if(pointer->signature != Pointer::signature_magic)
 				continue;
@@ -50,10 +50,9 @@ namespace MP
 		if(search_area(0, mmio_start, mp))
 			return;
 
-		uint16_t *ebda_ptr;
-		Memory::Physical::Object<uint16_t> ebda_ptr_block(ebda_ptr, 0x40E);
+		Memory::ScopedBlock ebda_ptr_block;
 
-		ptr_t ebda = ((ptr_t)*ebda_ptr) << 4;
+		ptr_t ebda = ((ptr_t)*ebda_ptr_block.map_object<uint16_t>(0x40E)) << 4;
 
 		if(search_area(align_up(ebda, 16), 0x400, mp))
 			return;
@@ -67,18 +66,19 @@ namespace MP
 
 		assert(mp.config_address != 0, "There's no MP configuration header");
 
-		const Configuration *cfg;
-		Memory::Physical::Object<const Configuration> cfg_map(cfg, mp.config_address);
+
+		Memory::ScopedBlock cfg_map;
+		const Configuration *cfg = cfg_map.map_object<Configuration>(mp.config_address);
 
 		assert(cfg->signature == Configuration::signature_magic, "Invalid signature for MP configuration header");
 		assert(checksum((uint8_t *)cfg, (uint8_t *)cfg + cfg->base_table_size) == 0, "Invalid checksum for MP configuration header");
 
 		console.s("MP OEM: ").color(Console::Value).str_array(cfg->oem_id).c(' ').str_array(cfg->product_id).color(Console::Default).endl();
 
-		void *cfg_table;
-		Memory::Physical::Block cfg_block(cfg_table, mp.config_address, cfg->base_table_size);
+		Memory::ScopedBlock cfg_block;
+		uint8_t *cfg_table = (uint8_t *)cfg_block.map_block(mp.config_address, cfg->base_table_size);
 
-		uint8_t *entry = (uint8_t *)cfg_table + sizeof(Configuration);
+		uint8_t *entry = cfg_table + sizeof(Configuration);
 		size_t entry_count = cfg->entry_count;
 
 		while(entry_count--)

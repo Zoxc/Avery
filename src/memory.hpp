@@ -8,7 +8,14 @@ namespace Memory
 {
 	struct Block
 	{
-		unsigned int free : 1;
+		enum Type
+		{
+			Free,
+			Default,
+			PhysicalView
+		};
+
+		size_t type;
 		Memory::VirtualPage *base;
 		size_t pages;
 
@@ -38,7 +45,7 @@ namespace Memory
 		void dump();
 		void initialize(VirtualPage *start, VirtualPage *end);
 
-		Block *allocate(size_t pages = 1);
+		Block *allocate(Block::Type type, size_t pages = 1);
 		void free(Block *block);
 	};
 
@@ -54,45 +61,44 @@ namespace Memory
 	};
 
 	Block *map_physical(PhysicalPage *physical, size_t pages, size_t flags = r_data_flags);
-	void unmap_physical(Block *block);
 
-	namespace Physical
+	Block *allocate_block(Block::Type type, size_t pages = 1);
+	void free_block(Block *block);
+
+	class ScopedBlock
 	{
-		class Block
+	private:
+		Block *block;
+
+	public:
+		ScopedBlock(Block *block) : block(block)
 		{
-		private:
-			Memory::Block *block;
+		}
 
-		public:
-			Block(void *&ptr, ptr_t addr, ptr_t size, size_t flags = r_data_flags)
-			{
-				ptr = map_physical_structure(block, addr, size, flags);
-			}
-
-			~Block()
-			{
-				unmap_physical(block);
-			}
-		};
-
-		template<class T> class Object
+		ScopedBlock() : block(nullptr)
 		{
-		private:
-			Memory::Block *block;
+		}
 
-		public:
-			Object(T *&ptr, ptr_t addr, size_t flags = r_data_flags)
-			{
-				ptr = map_physical_structure<T>(block, addr, flags);
-			}
+		void *map_block(ptr_t addr, ptr_t size, size_t flags = r_data_flags)
+		{
+			return map_physical_structure(block, addr, size, flags);
+		}
 
-			~Object()
-			{
-				unmap_physical(block);
-			}
-		};
+		template<class T> T *map_object(ptr_t addr, size_t flags = r_data_flags)
+		{
+			return map_physical_structure<T>(block, addr, flags);
+		}
+
+		void set(Block *new_block)
+		{
+			block = new_block;
+		}
+
+		~ScopedBlock()
+		{
+			if(block)
+				free_block(block);
+		}
 	};
 
-	Block *allocate_pages(size_t pages = 1);
-	void free_pages(Block *block);
 };
