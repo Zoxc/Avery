@@ -48,11 +48,9 @@ namespace APIC
 
 		auto mapped_physical = (Memory::PhysicalPage *)(((base >> 12) & 0xFFFFFFFFFF) << 12);
 
-		auto mapped_virtual = Memory::allocate_pages(1)->base;
+		auto mapped_virtual = Memory::map_physical(mapped_physical, 1, Memory::rw_data_flags | Memory::no_cache_flags)->base;
 
 		registers = (uint8_t *)mapped_virtual;
-
-		*Memory::ensure_page_entry(mapped_virtual) = Memory::page_table_entry(mapped_physical, Memory::rw_data_flags | Memory::no_cache_flags);
 
 		reg(reg_dfr) = -1;
 		reg(reg_ldr) = (reg(reg_ldr) & 0x00FFFFFF);

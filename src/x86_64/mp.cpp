@@ -17,13 +17,14 @@ namespace MP
 		return result;
 	}
 
-	bool search_area(ptr_t start, ptr_t size, Pointer *&result)
+	bool search_area(ptr_t start, ptr_t size, Pointer &result)
 	{
-		start += Memory::low_memory_start;
+		void *mapped;
+		Memory::Physical::Block block(mapped, start, size);
 
-		size_t end = start + size;
+		size_t end = (size_t)mapped + size;
 
-		for(auto pointer = (Pointer *)start; (ptr_t)pointer < end; ++pointer)
+		for(auto pointer = (Pointer *)mapped; (ptr_t)pointer < end; ++pointer)
 		{
 			if(pointer->signature != Pointer::signature_magic)
 				continue;
@@ -31,14 +32,15 @@ namespace MP
 			if(checksum((uint8_t *)pointer, (uint8_t *)(pointer + pointer->length)) != 0)
 				continue;
 
-			result = pointer;
+			result = *pointer;
+
 			return true;
 		}
 
 		return false;
 	}
 
-	Pointer *mp;
+	Pointer mp;
 
 	void search()
 	{
@@ -48,9 +50,12 @@ namespace MP
 		if(search_area(0, mmio_start, mp))
 			return;
 
-		ptr_t ebda = ((ptr_t)*(uint16_t *)(Memory::low_memory_start + 0x40E)) << 4;
+		uint16_t *ebda_ptr;
+		Memory::Physical::Object<uint16_t> ebda_ptr_block(ebda_ptr, 0x40E);
 
-		if(search_area(align(ebda, 16), 0x400, mp))
+		ptr_t ebda = ((ptr_t)*ebda_ptr) << 4;
+
+		if(search_area(align_up(ebda, 16), 0x400, mp))
 			return;
 
 		panic("Didn't find MP floating pointer structure");
@@ -60,25 +65,14 @@ namespace MP
 	{
 		search();
 
-		assert(mp->config_address != 0, "There's no MP configuration header");
+		assert(mp.config_address != 0, "There's no MP configuration header");
 
-		auto config_page = (Memory::PhysicalPage *)align_down(mp->config_address, Arch::page_size);
-
-		auto mapping = Memory::allocate_pages(2);
-
-		map_address(mapping->base, config_page, Memory::r_data_flags);
-		map_address(mapping->base + 1, config_page + 1, Memory::r_data_flags);
-
-		auto cfg = (Configuration *)((uint8_t *)mapping->base + (mp->config_address & (Arch::page_size - 1)));
+		const Configuration *cfg;
+		Memory::Physical::Object<const Configuration> cfg_map(cfg, mp.config_address);
 
 		assert(cfg->signature == Configuration::signature_magic, "Invalid signature for MP configuration header");
 		assert(checksum((uint8_t *)cfg, (uint8_t *)cfg + cfg->base_table_size) == 0, "Invalid checksum for MP configuration header");
 
 		console.s("MP OEM: ").color(Console::Value).str_array(cfg->oem_id).c(' ').str_array(cfg->product_id).color(Console::Default).endl();
-
-		*Memory::get_page_entry(mapping->base) = 0;
-		*Memory::get_page_entry(mapping->base + 1) = 0;
-
-		Memory::free_pages(mapping);
 	}
 };

@@ -6,7 +6,7 @@ namespace Memory
 
 	void initialize()
 	{
-		allocator.initialize(Memory::allocator_start, Memory::allocator_end);
+		allocator.initialize((VirtualPage *)Memory::allocator_start, (VirtualPage *)Memory::allocator_end);
 	}
 
 	Allocator::Allocator() :
@@ -101,10 +101,10 @@ namespace Memory
 		return current_block++;
 	}
 
-	void Allocator::initialize(size_t start, size_t end)
+	void Allocator::initialize(VirtualPage *start, VirtualPage *end)
 	{
-		first_block.base = (VirtualPage *)start;
-		first_block.pages = (VirtualPage *)end - first_block.base;
+		first_block.base = start;
+		first_block.pages = end - start;
 		first_block.free = true;
 
 		free_list.append(&first_block);
@@ -193,6 +193,38 @@ namespace Memory
 			current->free = true;
 			free_list.append(current);
 		}
+	}
+
+	void *map_physical_structure(Block *&block, ptr_t addr, size_t size, size_t flags)
+	{
+		ptr_t start = align_down(addr, Arch::page_size);
+		ptr_t end = align_up(addr + size, Arch::page_size);
+
+		block = map_physical((PhysicalPage *)start, (end - start) / Arch::page_size, flags);
+
+		return ((uint8_t *)block->base + (addr & (Arch::page_size - 1)));
+	}
+
+	Block *map_physical(PhysicalPage *physical, size_t pages, size_t flags)
+	{
+		Block *block = allocate_pages(pages);
+
+		auto end = block->base + pages;
+
+		for(auto p = block->base; p < end; ++p)
+			map_address(p, physical++, flags);
+
+		return block;
+	}
+
+	void unmap_physical(Block *block)
+	{
+		auto end = block->base + block->pages;
+
+		for(auto p = block->base; p < end; ++p)
+			unmap_address(p);
+
+		free_pages(block);
 	}
 
 	Block *allocate_pages(size_t pages)

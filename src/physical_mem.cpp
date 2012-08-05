@@ -102,7 +102,7 @@ void Memory::Physical::initialize()
 		hole.base = (PhysicalPage *)entry->base;
 		hole.pages = (entry->end - entry->base) / Arch::page_size;
 		hole.end = hole.base + hole.pages;
-		hole.units = align(hole.pages, Hole::bits_per_unit) / Hole::bits_per_unit;
+		hole.units = align_up(hole.pages, Hole::bits_per_unit) / Hole::bits_per_unit;
 	}
 	
 	assert(overhead_hole, "Didn't find overhead hole!");
@@ -131,7 +131,7 @@ void Memory::Physical::initialize()
 		pos += hole.units;
 	}
 
-	size_t used = align((ptr_t)pos, Arch::page_size) - physical_allocator_memory;
+	size_t used = align_up((ptr_t)pos, Arch::page_size) - physical_allocator_memory;
 	
 	used /= Arch::page_size;
 	

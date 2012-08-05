@@ -36,7 +36,7 @@ namespace Memory
 		Allocator();
 
 		void dump();
-		void initialize(size_t start, size_t end);
+		void initialize(VirtualPage *start, VirtualPage *end);
 
 		Block *allocate(size_t pages = 1);
 		void free(Block *block);
@@ -45,6 +45,53 @@ namespace Memory
 	extern Allocator allocator;
 
 	void initialize();
+
+	void *map_physical_structure(Block *&block, ptr_t addr, size_t size, size_t flags = r_data_flags);
+
+	template<class T> T *map_physical_structure(Block *&block, ptr_t addr, size_t flags = r_data_flags)
+	{
+		return (T *)map_physical_structure(block, addr, sizeof(T), flags);
+	};
+
+	Block *map_physical(PhysicalPage *physical, size_t pages, size_t flags = r_data_flags);
+	void unmap_physical(Block *block);
+
+	namespace Physical
+	{
+		class Block
+		{
+		private:
+			Memory::Block *block;
+
+		public:
+			Block(void *&ptr, ptr_t addr, ptr_t size, size_t flags = r_data_flags)
+			{
+				ptr = map_physical_structure(block, addr, size, flags);
+			}
+
+			~Block()
+			{
+				unmap_physical(block);
+			}
+		};
+
+		template<class T> class Object
+		{
+		private:
+			Memory::Block *block;
+
+		public:
+			Object(T *&ptr, ptr_t addr, size_t flags = r_data_flags)
+			{
+				ptr = map_physical_structure<T>(block, addr, flags);
+			}
+
+			~Object()
+			{
+				unmap_physical(block);
+			}
+		};
+	};
 
 	Block *allocate_pages(size_t pages = 1);
 	void free_pages(Block *block);

@@ -64,6 +64,7 @@ namespace Memory
 	void unmap(VirtualPage *address);
 
 	void map_address(VirtualPage *address, PhysicalPage *physical, size_t flags);
+	void unmap_address(VirtualPage *address);
 
 	static inline void assert_page_aligned(size_t address)
 	{
@@ -104,5 +105,10 @@ namespace Memory
 	static inline void load_pml4(PhysicalPage *pml4t)
 	{
 		asm volatile ("mov %%rax, %%cr3" :: "a"(pml4t));
+	}
+
+	static inline void invalidate_page(VirtualPage *address)
+	{
+		asm volatile ("invlpg (%%rdi)" :: "D"(address));
 	}
 };

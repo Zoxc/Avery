@@ -24,7 +24,7 @@ namespace Memory
 
 			flags |= present_bit;
 			size_t start_index = align_down(start_page_offset, Arch::page_size) / Arch::page_size;
-			size_t end_index = align(end_page_offset, Arch::page_size) / Arch::page_size;
+			size_t end_index = align_up(end_page_offset, Arch::page_size) / Arch::page_size;
 
 			assert(start_index < table_entries && start_index < end_index && end_index < table_entries, "Range out of bounds");
 			
@@ -130,12 +130,19 @@ void Memory::unmap(VirtualPage *address)
 	{
 		Physical::free_page(physical_page_from_table_entry(*page_entry));
 		*page_entry = 0;
+		invalidate_page(address);
 	}
 }
 
 void Memory::map_address(VirtualPage *address, PhysicalPage *physical, size_t flags)
 {
 	*ensure_page_entry(address) = page_table_entry(physical, flags);
+}
+
+void Memory::unmap_address(VirtualPage *address)
+{
+	*get_page_entry(address) = 0;
+	invalidate_page(address);
 }
 
 void Memory::Initial::initialize()

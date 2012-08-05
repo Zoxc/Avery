@@ -37,7 +37,7 @@ template<class T> static inline const T& min(const T& a, const T& b)
 	return (a < b) ? a : b;
 }
 
-static inline size_t align(size_t value, size_t alignment)
+static inline size_t align_up(size_t value, size_t alignment)
 {
 	alignment -= 1;
 	return (value + alignment) & ~alignment;
