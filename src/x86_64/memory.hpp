@@ -104,11 +104,11 @@ namespace Memory
 
 	static inline void load_pml4(PhysicalPage *pml4t)
 	{
-		asm volatile ("mov %%rax, %%cr3" :: "a"(pml4t));
+		asm volatile ("mov %%rax, %%cr3" :: "a"(pml4t) : "memory");
 	}
 
 	static inline void invalidate_page(VirtualPage *address)
 	{
-		asm volatile ("invlpg (%%rdi)" :: "D"(address));
+		asm volatile ("invlpg (%%rdi)" :: "D"(address) : "memory");
 	}
 };

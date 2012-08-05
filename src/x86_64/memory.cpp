@@ -130,6 +130,7 @@ void Memory::unmap(VirtualPage *address)
 	{
 		Physical::free_page(physical_page_from_table_entry(*page_entry));
 		*page_entry = 0;
+
 		invalidate_page(address);
 	}
 }
@@ -142,6 +143,7 @@ void Memory::map_address(VirtualPage *address, PhysicalPage *physical, size_t fl
 void Memory::unmap_address(VirtualPage *address)
 {
 	*get_page_entry(address) = 0;
+
 	invalidate_page(address);
 }
 

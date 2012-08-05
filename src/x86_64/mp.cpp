@@ -74,5 +74,79 @@ namespace MP
 		assert(checksum((uint8_t *)cfg, (uint8_t *)cfg + cfg->base_table_size) == 0, "Invalid checksum for MP configuration header");
 
 		console.s("MP OEM: ").color(Console::Value).str_array(cfg->oem_id).c(' ').str_array(cfg->product_id).color(Console::Default).endl();
+
+		void *cfg_table;
+		Memory::Physical::Block cfg_block(cfg_table, mp.config_address, cfg->base_table_size);
+
+		uint8_t *entry = (uint8_t *)cfg_table + sizeof(Configuration);
+		size_t entry_count = cfg->entry_count;
+
+		while(entry_count--)
+		{
+			assert(entry - (uint8_t *)cfg_table < cfg->base_table_size, "MP configuration table is too large");
+
+			switch(*entry)
+			{
+				case ProcessorEntry:
+				{
+					Processor *processor = (Processor *)entry;
+
+					console.s("| Found processor ").x(processor->local_apic);
+
+					entry = (uint8_t *)(processor + 1);
+
+					break;
+				};
+
+				case BusEntry:
+				{
+					Bus *bus = (Bus *)entry;
+
+					console.s("| Found buss ").u(bus->bus_id).s(" type ").str_array(bus->bus_type);
+
+					entry = (uint8_t *)(bus + 1);
+
+					break;
+				};
+
+				case IOAPICEntry:
+				{
+					IOAPIC *io_apic = (IOAPIC *)entry;
+
+					console.s("| Found I/O APIC ").u(io_apic->ioapic_id).s(" mapped at ").x(io_apic->address);
+
+					entry = (uint8_t *)(io_apic + 1);
+
+					break;
+				};
+
+				case IOInterruptEntry:
+				{
+					Interrupt *interrupt = (Interrupt *)entry;
+
+					console.s("| Found I/O interrupt from bus ").u(interrupt->source_bus_id).s(" going to APIC ").u(interrupt->dest_apic_id);
+
+					entry = (uint8_t *)(interrupt + 1);
+
+					break;
+				};
+
+				case LocalInterruptEntry:
+				{
+					Interrupt *interrupt = (Interrupt *)entry;
+
+					console.s("| Found local interrupt from bus ").u(interrupt->source_bus_id).s(" going to APIC ").u(interrupt->dest_apic_id);
+
+					entry = (uint8_t *)(interrupt + 1);
+
+					break;
+				};
+
+				default:
+					console.panic().s("Unknown MP configuration type ").u(*entry).endl();
+			}
+		}
+
+		console.endl();
 	}
 };
