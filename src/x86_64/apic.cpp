@@ -108,7 +108,6 @@ namespace APIC
 
 	void simple_oneshot_wake(const Arch::InterruptInfo &)
 	{
-		console.s("Timer expired!").endl();
 		oneshot_done = true;
 		reg(reg_eoi) = 0;
 	}

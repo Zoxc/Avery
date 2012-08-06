@@ -1,6 +1,7 @@
 #include "cpu.hpp"
 #include "apic.hpp"
 #include "gdt.hpp"
+#include "idt.hpp"
 #include "../memory.hpp"
 #include "../physical_mem.hpp"
 #include "../lib.hpp"
@@ -161,6 +162,9 @@ void CPU::initialize()
 
 extern "C" void ap_entry(CPU *cpu)
 {
+	Arch::initialize_gdt();
+	Arch::load_idt();
+
 	cpu->started = true;
 
 	while(true)

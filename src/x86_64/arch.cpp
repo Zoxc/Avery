@@ -5,6 +5,7 @@
 #include "acpi.hpp"
 #include "cpu.hpp"
 #include "gdt.hpp"
+#include "idt.hpp"
 
 void Arch::initialize_basic()
 {

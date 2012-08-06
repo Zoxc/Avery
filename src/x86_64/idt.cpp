@@ -1,4 +1,4 @@
-#include "arch.hpp"
+#include "idt.hpp"
 #include "../console.hpp"
 
 namespace Arch
@@ -228,5 +228,10 @@ void Arch::initialize_idt()
 	outb(0x21, 0xFF);
 	outb(0xA1, 0xFF);
 
+	load_idt();
+}
+
+void Arch::load_idt()
+{
 	asm volatile ("lidt %0" :: "m"(idt_ptr));
 }
