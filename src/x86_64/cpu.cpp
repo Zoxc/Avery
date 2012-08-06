@@ -83,9 +83,9 @@ void CPU::initialize()
 
 		APIC::ipi(cpus[i].apic_id, APIC::Init, 0);
 		APIC::simple_oneshot(1300000);
-		APIC::ipi(cpus[i].apic_id, APIC::Startup, 0);
+		APIC::ipi(cpus[i].apic_id, APIC::Startup, 0x1);
 		APIC::simple_oneshot(10000);
-		APIC::ipi(cpus[i].apic_id, APIC::Startup, 0);
+		APIC::ipi(cpus[i].apic_id, APIC::Startup, 0x1);
 
 		console.s("Waiting for CPU to start...").endl();
 

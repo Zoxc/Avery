@@ -49,7 +49,7 @@ namespace APIC
 	void ipi(size_t target, MessageType type, size_t vector)
 	{
 		reg(reg_icrh) = target << 24;
-		reg(reg_icrl) = (vector & 0xF) | ((type & 7) << 8);
+		reg(reg_icrl) = (vector & 0xFF) | ((type & 7) << 8);
 	}
 
 	size_t local_id()

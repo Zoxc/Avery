@@ -121,7 +121,7 @@ task :qemu_efi do
 	Dir.chdir('emu/') do
 		FileUtils.cp "../#{kernel_binary}", "hda/efi/boot"
 		puts "Running QEMU..."
-		execute *%w{qemu/qemu-system-x86_64 -L . -bios OVMF.fd -hda fat:hda -serial file:serial.txt -d int,cpu_reset -no-reboot -s}
+		execute *%w{qemu/qemu-system-x86_64 -L . -bios OVMF.fd -hda fat:hda -serial file:serial.txt -d int,cpu_reset -no-reboot -s -smp 2}
 	end
 end
 
@@ -130,7 +130,7 @@ task :bochs do
 	
 	Dir.chdir('emu/') do
 		puts "Running Bochs..."
-		execute 'bochs', '-q', '-f', 'avery.bxrc'
+		execute 'bochs\bochs', '-q', '-f', 'avery.bxrc'
 	end
 end
 

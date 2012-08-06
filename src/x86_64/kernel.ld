@@ -18,6 +18,8 @@ SECTIONS
 		build/src/x86_64/multiboot/bootstrap/*(*)
 		build/kernel-bootstrap.o(*)
 	}
+% else
+	. = 0x100000;
 % end
 
 	. = ALIGN(page_size);
@@ -36,7 +38,7 @@ SECTIONS
 		build/src/x86_64/cpu.S.o(*)
 	}
 
-	. = ap_bootstrap_start + (. - 0x1000);
+	. = ap_bootstrap_start + (. - ap_bootstrap_mapped);
 
 	ap_bootstrap_end = .;
 
@@ -44,7 +46,7 @@ SECTIONS
 
 	.text : AT(ADDR(.text) - high_offset)
 	{
-		*(.text)
+		*(.text*)
 		*(.gnu.linkonce.t*)
 	}
 	
@@ -57,7 +59,7 @@ SECTIONS
 		*(.ctor*)
 		ctors_end = .;
 		
-		*(.rodata)
+		*(.rodata*)
 		*(.gnu.linkonce.r*)
 		
 		raw_bitmap_font = .;
@@ -69,13 +71,13 @@ SECTIONS
 	
 	.data : AT(ADDR(.data) - high_offset)
 	{
-		*(.data)
+		*(.data*)
 		*(.gnu.linkonce.d*)
 	}
-	
+
 	.bss ALIGN(page_size) : AT(ADDR(.bss) - high_offset)
 	{
-		*(.bss)
+		*(.bss*)
 		*(.gnu.linkonce.b*)
 	}
 	
