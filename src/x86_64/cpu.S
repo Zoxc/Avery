@@ -1,5 +1,4 @@
 .intel_syntax noprefix
-.align 0x1000
 .code16
 
 .global ap_bootstrap
@@ -10,62 +9,101 @@ reset_cs:
 
 	xor eax, eax
 	mov ds, ax
-	mov es, ax
 
-set_A20_ap:
-	in al, 0x64
-	test al, 0x02
-	jnz set_A20_ap
+	lidt [idt]
 
-	mov al, 0xD1
-	out 0x64, al
+spin:
+	cmp dword ptr [allow_start], 0
+	jne enter_long_mode
+	pause
+	jmp spin
 
-check_A20_ap:
-	in al, 0x64
-	test al, 0x02
-	jnz check_A20_ap
+enter_long_mode:
+	# Enable PAE
+	mov eax, cr4
+	bts eax, 5
+	mov cr4, eax
 
-	mov al, 0xDF
-	out 0x60, al
+	# Setup PML4
+	mov eax, dword ptr [pml4]
+	mov cr3, eax
 
-	lgdt [gdt_pointer.32]
+	# Set long mode and NX enable bits
+	mov ecx, 0xC0000080
+	rdmsr
+	bts eax, 8
+	bts eax, 11
+	wrmsr
 
+	# Turn on paging and protected mode
 	mov eax, cr0
-	or al, 1
+	bts eax, 0
+	bts eax, 31
 	mov cr0, eax
 
+	lgdt [gdt_pointer]
+
+	jmp 8:long_mode
+
+.code64
+.global ap_entry
+
+long_mode:
 	mov ax, 0x10
-	mov ss, ax
 	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+	mov ss, ax
 
-	jmp 8:start.32
+	mov rax, [apic_regs]
+	mov eax, [rax + 0x20]
+	shr eax, 24
 
-.code32
-start.32:
-	mov eax, 0xb8000
-	movw [eax], 0x7623
-	hlt
-	jmp start.32
+	mov rdx, [cpu_apic_offset]
+	mov rbx, [cpus]
 
-.align 0x10
-gdt.32:
+find_cpu:
+	cmp [rbx + rdx], eax
+	je found_cpu
+	add rbx, [cpu_size]
+	jmp find_cpu
+
+found_cpu:
+	mov rdx, [cpu_stack_offset]
+	mov rsp, [rbx + rdx]
+	mov rdi, rbx
+
+	jmp ap_entry
+
+gdt:
 .quad 0
+.quad 0x0020980000000000
+.quad 0x0000920000000000
 
-.word 0xFFFF
-.word 0
-.byte 0
-.byte 0x9A
-.byte 0xCF
-.byte 0
-
-.word 0xFFFF
-.word 0
-.byte 0
-.byte 0x92
-.byte 0xCF
-.byte 0
-
-.align 0x10
-gdt_pointer.32:
+gdt_pointer:
 .word 23
-.long gdt.32
+.quad gdt
+
+idt:
+.word 0
+.byte 0
+
+.global ap_bootstrap_info
+ap_bootstrap_info:
+pml4:
+.long 0
+allow_start:
+.long 0
+apic_regs:
+.quad 0
+cpu_count:
+.quad 0
+cpu_size:
+.quad 0
+cpu_apic_offset:
+.quad 0
+cpu_stack_offset:
+.quad 0
+cpus:
+.quad 0

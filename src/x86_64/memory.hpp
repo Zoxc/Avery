@@ -17,6 +17,8 @@ namespace Memory
 
 	typedef page_table_entry_t table_t[table_entries] __attribute__((aligned(0x1000)));
 
+	extern table_t ptl4_static;
+
 	struct VirtualPage
 	{
 		uint8_t data[Arch::page_size];
@@ -86,7 +88,8 @@ namespace Memory
 	page_table_entry_t *get_page_entry(VirtualPage *pointer);
 	page_table_entry_t *ensure_page_entry(VirtualPage *pointer);
 
-	PhysicalPage *physical(VirtualPage *virtual_address);
+	PhysicalPage *physical_page(VirtualPage *virtual_address);
+	ptr_t physical_address(const void *virtual_address);
 
 	namespace Initial
 	{

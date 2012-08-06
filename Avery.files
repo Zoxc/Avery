@@ -49,3 +49,4 @@ src/x86_64/acpi.cpp
 src/x86_64/cpu.hpp
 src/x86_64/cpu.cpp
 src/x86_64/cpu.S
+src/x86_64/gdt.hpp

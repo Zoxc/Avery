@@ -1,5 +1,6 @@
 #pragma once
 #include "arch.hpp"
+#include "../memory.hpp"
 
 struct CPU
 {
@@ -7,6 +8,9 @@ struct CPU
 	size_t acpi_id;
 	size_t apic_id;
 	uint32_t apic_registers;
+	bool started;
+	Memory::Block *stack;
+	void *stack_end;
 
 	static const size_t max_cpus = 32;
 	static size_t count;

@@ -34,7 +34,7 @@ namespace Memory
 
 		page_table_entry_t table_entry_from_data(void *table)
 		{
-			return page_table_entry(physical((VirtualPage *)table), present_bit | write_bit);
+			return page_table_entry(physical_page((VirtualPage *)table), present_bit | write_bit);
 		}
 	}
 
@@ -112,9 +112,14 @@ namespace Memory
 
 };
 
-Memory::PhysicalPage *Memory::physical(VirtualPage *virtual_address)
+Memory::PhysicalPage *Memory::physical_page(VirtualPage *virtual_address)
 {
 	return physical_page_from_table_entry(*get_page_entry(virtual_address));
+}
+
+ptr_t Memory::physical_address(const void *virtual_address)
+{
+	return (ptr_t)physical_page((VirtualPage *)align_down((ptr_t)virtual_address, Arch::page_size)) + ((ptr_t)virtual_address & (Arch::page_size - 1));
 }
 
 void Memory::map(VirtualPage *address)
@@ -211,7 +216,7 @@ void Memory::Initial::initialize()
 		map_page_table(ptl1_kernel, virtual_offset, virtual_offset + hole.end - hole.base, (PhysicalPage *)hole.base, flags);
 	}
 
-	load_pml4(physical((VirtualPage *)&ptl4_static));
+	load_pml4(physical_page((VirtualPage *)&ptl4_static));
 
 	console.new_buffer((void *)framebuffer_start);
 }

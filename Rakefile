@@ -113,7 +113,7 @@ task :qemu do
 	
 	Dir.chdir('emu/') do
 		puts "Running QEMU..."
-		execute *%w{qemu/qemu-system-x86_64 -L qemu\Bios -hda grubdisk.img -serial file:serial.txt -d int,cpu_reset -no-reboot -s -smp 2}
+		execute *%w{qemu/qemu-system-x86_64 -L qemu\Bios -hda grubdisk.img -serial file:serial.txt -d int,cpu_reset -no-reboot -s -smp 4}
 	end
 end
 
@@ -121,7 +121,7 @@ task :qemu_efi do
 	Dir.chdir('emu/') do
 		FileUtils.cp "../#{kernel_binary}", "hda/efi/boot"
 		puts "Running QEMU..."
-		execute *%w{qemu/qemu-system-x86_64 -L . -bios OVMF.fd -hda fat:hda -serial file:serial.txt -d int,cpu_reset -no-reboot -s -smp 2}
+		execute *%w{qemu/qemu-system-x86_64 -L . -bios OVMF.fd -hda fat:hda -serial file:serial.txt -d int,cpu_reset -no-reboot -s -smp 4}
 	end
 end
 

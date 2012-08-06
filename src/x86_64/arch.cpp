@@ -4,6 +4,7 @@
 #include "apic.hpp"
 #include "acpi.hpp"
 #include "cpu.hpp"
+#include "gdt.hpp"
 
 void Arch::initialize_basic()
 {
@@ -21,6 +22,48 @@ void Arch::initialize()
 	APIC::initialize();
 	ACPI::initialize();
 	CPU::initialize();
+}
+
+size_t Arch::read_msr(uint32_t reg)
+{
+	uint32_t low, high;
+
+	asm volatile ("rdmsr" : "=a" (low), "=d" (high) : "c" (reg));
+
+	return (size_t)low | ((size_t)high << 32);
+}
+
+void Arch::write_msr(uint32_t reg, size_t value)
+{
+	asm volatile ("wrmsr" : : "a" (value), "d" (value >> 32), "c" (reg));
+}
+
+void Arch::outb(uint16_t port, uint8_t value)
+{
+	asm volatile("outb %1, %0" : : "dN" (port), "a" (value));
+}
+
+uint8_t Arch::inb(uint16_t port)
+{
+	uint8_t ret;
+
+	asm volatile("inb %1, %0" : "=a" (ret) : "dN" (port));
+
+	return ret;
+}
+
+uint16_t Arch::inw(uint16_t port)
+{
+	uint16_t ret;
+
+	asm volatile ("inw %1, %0" : "=a" (ret) : "dN" (port));
+
+	return ret;
+}
+
+void Arch::pause()
+{
+	asm volatile ("pause");
 }
 
 void Arch::enable_interrupts()

@@ -57,6 +57,11 @@ namespace APIC
 		return reg(reg_id);
 	}
 
+	void *get_registers()
+	{
+		return (void *)registers;
+	}
+
 	bool has_base = false;
 	size_t register_base;
 

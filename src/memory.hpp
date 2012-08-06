@@ -12,6 +12,7 @@ namespace Memory
 		{
 			Free,
 			Default,
+			Stack,
 			PhysicalView
 		};
 
