@@ -73,6 +73,10 @@ irq(13)
 irq(14)
 irq(15)
 
+.global spurious_irq
+spurious_irq:
+	iretq
+
 isr_stub:
 	# Push all registers
 	push %rax

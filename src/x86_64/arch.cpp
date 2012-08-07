@@ -20,8 +20,8 @@ void Arch::initialize_memory()
 
 void Arch::initialize()
 {
-	APIC::initialize();
 	ACPI::initialize();
+	APIC::initialize();
 	CPU::initialize();
 }
 

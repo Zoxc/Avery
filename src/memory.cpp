@@ -86,6 +86,7 @@ namespace Memory
 
 		map(overhead);
 
+		overhead_block->type = Block::Overhead;
 		overhead_block->base = overhead;
 		overhead_block->pages = 1;
 

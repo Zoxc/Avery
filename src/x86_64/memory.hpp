@@ -89,7 +89,7 @@ namespace Memory
 	page_table_entry_t *ensure_page_entry(VirtualPage *pointer);
 
 	PhysicalPage *physical_page(VirtualPage *virtual_address);
-	ptr_t physical_address(const void *virtual_address);
+	ptr_t physical_address(const volatile void *virtual_address);
 
 	namespace Initial
 	{

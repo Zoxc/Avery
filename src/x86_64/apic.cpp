@@ -63,7 +63,7 @@ namespace APIC
 	}
 
 	bool has_base = false;
-	size_t register_base;
+	addr_t register_base;
 
 	void set_registers(ptr_t registers)
 	{
@@ -77,7 +77,7 @@ namespace APIC
 		Memory::PhysicalPage *mapped_physical;
 
 		if(has_base)
-			mapped_physical =  (Memory::PhysicalPage *)register_base;
+			mapped_physical = (Memory::PhysicalPage *)register_base;
 		else
 			mapped_physical = (Memory::PhysicalPage *)(((base >> 12) & 0xFFFFFFFFFF) << 12);
 

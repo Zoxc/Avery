@@ -51,3 +51,5 @@ src/x86_64/cpu.cpp
 src/x86_64/cpu.S
 src/x86_64/gdt.hpp
 src/x86_64/idt.hpp
+src/x86_64/io-apic.hpp
+src/x86_64/io-apic.cpp

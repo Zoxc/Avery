@@ -117,7 +117,7 @@ Memory::PhysicalPage *Memory::physical_page(VirtualPage *virtual_address)
 	return physical_page_from_table_entry(*get_page_entry(virtual_address));
 }
 
-ptr_t Memory::physical_address(const void *virtual_address)
+ptr_t Memory::physical_address(const volatile void *virtual_address)
 {
 	return (ptr_t)physical_page((VirtualPage *)align_down((ptr_t)virtual_address, Arch::page_size)) + ((ptr_t)virtual_address & (Arch::page_size - 1));
 }

@@ -11,6 +11,7 @@ namespace Memory
 		enum Type
 		{
 			Free,
+			Overhead,
 			Default,
 			Stack,
 			PhysicalView

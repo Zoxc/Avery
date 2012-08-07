@@ -41,7 +41,12 @@ namespace ACPI
 
 		enum EntryType
 		{
-			ProcessorLocalAPICEntry
+			ProcessorLocalAPICEntry,
+			IOAPICEntry,
+			InterruptSourceOverrideEntry,
+			NMISourceEntry,
+			LocalAPICNMIEntry,
+			LocalAPICAddressOverrideEntry
 		};
 
 		struct Entry
@@ -58,7 +63,32 @@ namespace ACPI
 			uint32_t flags;
 
 			static const size_t flag_enabled = 1;
-		};
+		} __attribute__((packed));
+
+		struct IOAPIC:
+			public Entry
+		{
+			uint8_t id;
+			uint8_t reserved;
+			uint32_t address;
+			uint32_t global_int_start;
+		} __attribute__((packed));
+
+		struct LocalAPICAddressOverride:
+			public Entry
+		{
+			uint16_t reserved;
+			uint64_t apic_address;
+		} __attribute__((packed));
+
+		struct InterruptSourceOverride:
+			public Entry
+		{
+			uint8_t bus;
+			uint8_t source;
+			uint32_t global_int;
+			uint16_t flags;
+		} __attribute__((packed));
 	} __attribute__((packed));
 
 	struct RSDT:
@@ -69,6 +99,6 @@ namespace ACPI
 		uint32_t tables[1]; // Variable length
 	} __attribute__((packed));
 
-	void set_table(ptr_t table);
+	void set_table(addr_t table);
 	void initialize();
 };

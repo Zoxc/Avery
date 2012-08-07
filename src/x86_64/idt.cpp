@@ -158,23 +158,45 @@ extern "C" void irq12();
 extern "C" void irq13();
 extern "C" void irq14();
 extern "C" void irq15();
+extern "C" void spurious_irq();
+
+void setup_pics()
+{
+	const size_t master_command = 0x20;
+	const size_t master_data = 0x21;
+	const size_t slave_command = 0xA0;
+	const size_t slave_data = 0xA1;
+
+	const size_t pic_init = 0x11;
+
+	const size_t pic_mask_all = 0xFF;
+
+	// Remap the PICs IRQ tables
+
+	Arch::outb(master_command, pic_init);
+	Arch::outb(master_data, 0x20);
+	Arch::outb(master_data, 0x04);
+	Arch::outb(master_data, 0x01);
+	Arch::outb(master_data, 0x0);
+
+	Arch::outb(slave_command, pic_init);
+	Arch::outb(slave_data, 0x20);
+	Arch::outb(slave_data, 0x02);
+	Arch::outb(slave_data, 0x01);
+	Arch::outb(slave_data, 0x0);
+
+	// Disable the PICs
+
+	Arch::outb(master_data, pic_mask_all);
+	Arch::outb(slave_data, pic_mask_all);
+}
 
 void Arch::initialize_idt()
 {
 	idt_ptr.limit = sizeof(idt_entries) - 1;
 	idt_ptr.base = idt_entries;
 
-	// Remap the IRQ table
-	outb(0x20, 0x11);
-	outb(0xA0, 0x11);
-	outb(0x21, 0x20);
-	outb(0xA1, 0x28);
-	outb(0x21, 0x04);
-	outb(0xA1, 0x02);
-	outb(0x21, 0x01);
-	outb(0xA1, 0x01);
-	outb(0x21, 0x0);
-	outb(0xA1, 0x0);
+	setup_pics();
 
 	set_gate(0, isr0);
 	set_gate(1, isr1);
@@ -215,7 +237,7 @@ void Arch::initialize_idt()
 	set_gate(36, irq4);
 	set_gate(37, irq5);
 	set_gate(38, irq6);
-	set_gate(39, irq7);
+	set_gate(39, spurious_irq);
 	set_gate(40, irq8);
 	set_gate(41, irq9);
 	set_gate(42, irq10);
@@ -224,9 +246,6 @@ void Arch::initialize_idt()
 	set_gate(45, irq13);
 	set_gate(46, irq14);
 	set_gate(47, irq15);
-
-	outb(0x21, 0xFF);
-	outb(0xA1, 0xFF);
 
 	load_idt();
 }

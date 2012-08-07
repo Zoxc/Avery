@@ -1,6 +1,7 @@
 #include "acpi.hpp"
 #include "cpu.hpp"
 #include "apic.hpp"
+#include "io-apic.hpp"
 #include "../memory.hpp"
 
 namespace ACPI
@@ -53,7 +54,7 @@ namespace ACPI
 	RSDP rsdp;
 
 	bool has_table = false;
-	ptr_t acpi_table;
+	addr_t acpi_table;
 
 	void set_table(ptr_t table)
 	{
@@ -68,7 +69,7 @@ namespace ACPI
 
 		Memory::ScopedBlock ebda_ptr_block;
 
-		ptr_t ebda = ((ptr_t)*ebda_ptr_block.map_object<uint16_t>(0x40E)) << 4;
+		addr_t ebda = ((addr_t)*ebda_ptr_block.map_object<uint16_t>(0x40E)) << 4;
 
 		if(search_area(align_up(ebda, 16), 0x400, rsdp))
 			return;
@@ -109,6 +110,33 @@ namespace ACPI
 
 					break;
 				};
+
+				case MADT::IOAPICEntry:
+				{
+					auto io = (MADT::IOAPIC *)entry;
+
+					IOAPIC::allocate(io->id, (Memory::PhysicalPage *)io->address);
+
+					break;
+				}
+
+				case MADT::InterruptSourceOverrideEntry:
+				{
+					auto override = (MADT::InterruptSourceOverride *)entry;
+
+					console.s("Interrupt source override - bus: ").u(override->bus).s(" irq: ").u(override->source).s(" int: ").u(override->global_int).endl();
+
+					break;
+				}
+
+				case MADT::LocalAPICAddressOverrideEntry:
+				{
+					auto override = (MADT::LocalAPICAddressOverride *)entry;
+
+					APIC::set_registers(override->apic_address);
+
+					break;
+				}
 
 				default:
 					break;

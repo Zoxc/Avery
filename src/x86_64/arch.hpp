@@ -34,8 +34,6 @@ namespace Arch
 
 	void halt();
 
-	void initialize_idt();
-
 	void initialize_basic();
 	void initialize_memory();
 	void initialize();

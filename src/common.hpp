@@ -1,18 +1,9 @@
 #pragma once
+#include <stddef.h>
+#include <stdint.h>
 
-typedef signed long ssize_t;
-typedef unsigned long size_t;
-
-typedef signed char int8_t;
-typedef unsigned char uint8_t;
-typedef short int16_t;
-typedef unsigned short uint16_t;
-typedef int int32_t;
-typedef unsigned uint32_t;
-typedef long long int64_t;
-typedef unsigned long uint64_t;
-
-typedef uint64_t ptr_t;
+typedef uintptr_t ptr_t;
+typedef uint64_t addr_t;
 
 template<class T> static inline const T& min(const T& a, const T& b)
 {
