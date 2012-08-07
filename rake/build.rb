@@ -3,8 +3,30 @@ require 'digest'
 require 'pathname'
 
 class Build
+	class Dependency
+		attr_reader :path
+		
+		def initialize(path, digest = nil)
+			@path = path
+			@digest = digest
+		end
+		
+		def store
+			{'path' => @path.path, 'digest' => @digest}
+		end
+		
+		def updated?
+			if path.digest != @digest
+				@digest = path.digest
+				path.updated? || true
+			else
+				path.updated?
+			end
+		end
+	end
+	
 	class Path
-		attr_reader :path, :depends, :new_digest
+		attr_reader :path, :depends
 		attr_accessor :old_digest, :pending_depends
 		
 		def initialize(build, path)
@@ -21,17 +43,21 @@ class Build
 			File.extname(@path)
 		end
 		
-		def load_depends
-			return unless @pending_depends
-			@depends = @pending_depends.map { |d| @build.file(:input, d) }
+		def store_depends
+			@depends.map(&:store) if @depends
 		end
 		
-		def depends_outdated?
+		def load_depends
+			return unless @pending_depends
+			@depends = @pending_depends.map { |d| Dependency.new(@build.file(:input, d['path']), d['digest']) }
+		end
+		
+		def depends_updated?
 			result = nil
 			begin
 				raise "Circular dependencies" if @lock
 				@lock = true
-				@depends.each { |d| result = d.outdated? || result }
+				@depends.each { |d| result = d.updated? || result }
 			ensure
 				@lock = nil
 			end
@@ -39,13 +65,11 @@ class Build
 		end
 		
 		def digest
-			digest = Digest::SHA2.new(256)
-			digest.file @path
-			digest.hexdigest
-		end
-		
-		def update
-			@new_digest ||= digest
+			@digest ||= begin
+				digest = Digest::SHA2.new(256)
+				digest.file @path
+				digest.hexdigest
+			end
 		end
 	end
 	
@@ -56,38 +80,32 @@ class Build
 			:input
 		end
 		
-		def store_depends
-			@depends.map { |d| d.path }
-		end
-		
 		def update_depends
 			@old_digest = nil
-			@outdated = true
+			@updated = true
 			@depends = []
 			@depends_generator.call if @depends_generator
 		end
 		
-		def outdated?
-			return @outdated if @outdated != nil
+		def updated?
+			return @updated if @updated != nil
 			
-			update
+			digest
 			
 			if @old_digest
-				if @old_digest != @new_digest
-					puts "#{path} is outdated"
+				if @old_digest != @digest
 					update_depends
-					depends_outdated?
+					depends_updated?
 				else
 					update_depends unless @depends
-					@outdated = depends_outdated?
+					@updated = depends_updated?
 				end
 			else
-				puts "#{path} is new"
 				update_depends
-				depends_outdated?
+				depends_updated?
 			end
 			
-			@outdated
+			@updated
 		end
 	end
 	
@@ -96,30 +114,28 @@ class Build
 			:output
 		end
 		
-		def store_depends
+		def set_depends(inputs)
+			if !@depends || @depends.map{ |d| d.path.path }.sort != inputs.map { |d| d.path }.sort
+				@depends = inputs.map { |d| Dependency.new(d) }
+				@updated = true
+			end
 		end
 		
-		def add_depends(inputs)
-			@depends ||= []
-			@depends.concat inputs
-			@depends.uniq!
-		end
-		
-		def outdated?
-			return @outdated if @outdated != nil
+		def updated?
+			return @updated if @updated != nil
 			
-			@outdated = !@old_digest
+			@updated = !@old_digest || !File.exists?(@path)
 		end
 		
 		def rebuild?
-			result = depends_outdated? || outdated?
+			result = depends_updated? || updated?
 			@old_digest = nil if result
 			result
 		end
 		
 		def rebuild
-			@outdated = true
-			update
+			@updated = true
+			digest
 		end
 	end
 	
@@ -131,6 +147,7 @@ class Build
 			patterns.each do |pattern|
 				files += Dir[pattern]
 			end
+			files.reject! { |f| Dir.exists? f }
 			files
 		end
 
@@ -222,9 +239,9 @@ class Build
 			yield
 		ensure
 			output = {}
+			
 			@files.each do |file, path|
-				digest = path.new_digest || path.old_digest
-				next unless digest
+				digest = path.digest || path.old_digest
 				data = {'digest' => digest, 'type' => path.type}
 				depends = path.store_depends
 				data['depends'] = depends if depends
@@ -271,7 +288,7 @@ class Build
 			depends.uniq!
 			depends.delete(input.path)
 			
-			depends.each { |d| input.depends << file(:input, d) }
+			depends.each { |d| input.depends << Dependency.new(file(:input, d)) }
 		end
 	end
 	
@@ -280,10 +297,10 @@ class Build
 		input_files = inputs.map { |i| file(:input, i) }
 		
 		output_file = file(:output, output)
-		output_file.add_depends(input_files)
+		output_file.set_depends(input_files)
 		
 		if output_file.rebuild?
-			puts "Creating #{output}..."
+			puts "Creating #{output}"
 			mkdirs(output)
 			block.call output, *inputs
 			output_file.rebuild

@@ -124,7 +124,6 @@ task :build_boot do
 end
 
 task :qemu => :build do
-	
 	Dir.chdir('emu/') do
 		puts "Running QEMU..."
 		Build.execute *%w{qemu/qemu-system-x86_64 -L qemu\Bios -hda grubdisk.img -serial file:serial.txt -d int,cpu_reset -no-reboot -s -smp 4}
