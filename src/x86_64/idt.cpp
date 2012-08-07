@@ -1,4 +1,5 @@
 #include "idt.hpp"
+#include "apic.hpp"
 #include "../console.hpp"
 
 namespace Arch
@@ -97,17 +98,9 @@ extern "C" void Arch::isr_handler(const InterruptInfo &info)
 
 extern "C" void Arch::irq_handler(const InterruptInfo &info)
 {
-    // Send an EOI (end of interrupt) signal to the PICs.
-    // If this interrupt involved the slave.
-    if (info.interrupt_index >= 40)
-    {
-        // Send reset signal to slave.
-        Arch::outb(0xA0, 0x20);
-    }
-	// Send reset signal to master.
-    Arch::outb(0x20, 0x20);
-	
 	isr_handler(info);
+
+	APIC::eoi();
 }
 
 extern "C" void isr0();
@@ -174,13 +167,13 @@ void setup_pics()
 	// Remap the PICs IRQ tables
 
 	Arch::outb(master_command, pic_init);
-	Arch::outb(master_data, 0x20);
+	Arch::outb(master_data, 0xF8);
 	Arch::outb(master_data, 0x04);
 	Arch::outb(master_data, 0x01);
 	Arch::outb(master_data, 0x0);
 
 	Arch::outb(slave_command, pic_init);
-	Arch::outb(slave_data, 0x20);
+	Arch::outb(slave_data, 0xF8);
 	Arch::outb(slave_data, 0x02);
 	Arch::outb(slave_data, 0x01);
 	Arch::outb(slave_data, 0x0);
@@ -237,7 +230,7 @@ void Arch::initialize_idt()
 	set_gate(36, irq4);
 	set_gate(37, irq5);
 	set_gate(38, irq6);
-	set_gate(39, spurious_irq);
+	set_gate(39, irq7);
 	set_gate(40, irq8);
 	set_gate(41, irq9);
 	set_gate(42, irq10);
@@ -246,6 +239,8 @@ void Arch::initialize_idt()
 	set_gate(45, irq13);
 	set_gate(46, irq14);
 	set_gate(47, irq15);
+
+	set_gate(0xFF, spurious_irq);
 
 	load_idt();
 }

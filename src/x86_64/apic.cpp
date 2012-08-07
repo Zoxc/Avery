@@ -40,6 +40,11 @@ namespace APIC
 		return *(volatile uint32_t *)(registers + offset);
 	}
 
+	void eoi()
+	{
+		reg(reg_eoi) = 0;
+	}
+
 	void timer(const Arch::InterruptInfo &)
 	{
 		console.s("Timer working!").endl();
@@ -99,7 +104,7 @@ namespace APIC
 		reg(reg_lvt_timer) = 32;
 		reg(reg_timer_div) = 3;
 		reg(reg_timer_init) = 1000000;
-		reg(reg_siv) = 39 | sw_enable;
+		reg(reg_siv) = 0xFF | sw_enable;
 
 		Arch::register_interrupt_handler(32, timer);
 	}

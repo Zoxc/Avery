@@ -16,6 +16,7 @@ namespace APIC
 	};
 
 	void *get_registers();
+	void eoi();
 	void set_registers(addr_t registers);
 	size_t local_id();
 	void ipi(size_t target, MessageType type, size_t vector);
