@@ -1,5 +1,6 @@
 #pragma once
 #include "../common.hpp"
+#include "../util/vector.hpp"
 #include "arch.hpp"
 
 namespace Memory
@@ -16,6 +17,13 @@ namespace Memory
 	const size_t table_entries = 512;
 
 	typedef page_table_entry_t table_t[table_entries] __attribute__((aligned(0x1000)));
+
+	struct AddressSpace
+	{
+		addr_t ptl4_addr;
+		table_t *ptl4;
+		Vector<addr_t> pages;
+	};
 
 	extern table_t ptl4_static;
 
@@ -55,10 +63,10 @@ namespace Memory
 	const ptr_t mapped_pml2ts = kernel_location - ptl2_size;
 	const ptr_t mapped_pml3ts = kernel_location + ptl1_size * 511;
 
-	void map(VirtualPage *address);
+	void map(VirtualPage *address, AddressSpace *storage = 0);
 	void unmap(VirtualPage *address);
 
-	void map_address(VirtualPage *address, addr_t physical, size_t flags);
+	void map_address(VirtualPage *address, addr_t physical, size_t flags, AddressSpace *storage = 0);
 	void unmap_address(VirtualPage *address);
 
 	static inline void assert_page_aligned(size_t address)
@@ -79,7 +87,7 @@ namespace Memory
 	}
 
 	page_table_entry_t *get_page_entry(VirtualPage *pointer);
-	page_table_entry_t *ensure_page_entry(VirtualPage *pointer);
+	page_table_entry_t *ensure_page_entry(VirtualPage *pointer, AddressSpace *storage);
 
 	addr_t physical_page(VirtualPage *virtual_address);
 	addr_t physical_address(const volatile void *virtual_address);

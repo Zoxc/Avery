@@ -111,6 +111,13 @@ extern "C"
 		panic("Abstract virtual function called");
 	}
 
+	void *__dso_handle;
+
+	int __cxa_atexit(void (*) (void *), void *, void *)
+	{
+		return 0;
+	}
+
 	void memcpy(void *dst, const void *src, size_t size)
 	{
 		uint8_t *d = (uint8_t *)dst;

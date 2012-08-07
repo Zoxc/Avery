@@ -43,10 +43,17 @@ namespace Memory
 		return (ptr_t)entry & present_bit;
 	}
 
-	void ensure_table_entry(table_t *table, size_t index)
+	void ensure_table_entry(table_t *table, size_t index, AddressSpace *storage)
 	{
 		if(!page_table_entry_present((*table)[index]))
-			(*table)[index] = page_table_entry(Physical::allocate_page(), present_bit | write_bit);
+		{
+			addr_t page = Physical::allocate_page();
+
+			if(storage)
+				storage->pages.push(page);
+
+			(*table)[index] = page_table_entry(page, present_bit | write_bit);
+		}
 	}
 
 	template<typename F> void decode_address(VirtualPage *pointer, F func)
@@ -89,20 +96,20 @@ namespace Memory
 		return (page_table_entry_t *)phy_ptr;
 	}
 
-	page_table_entry_t *ensure_page_entry(VirtualPage *pointer)
+	page_table_entry_t *ensure_page_entry(VirtualPage *pointer, AddressSpace *storage)
 	{
 		ptr_t phy_ptr;
 
 		decode_address(pointer, [&](size_t ptl4_index, size_t ptl3_index, size_t ptl2_index, size_t ptl1_index) {
-			ensure_table_entry(&ptl4_static, ptl4_index);
+			ensure_table_entry(&ptl4_static, ptl4_index, storage);
 
 			auto ptl3 = (table_t *)(mapped_pml3ts + ptl4_index * page_size);
 
-			ensure_table_entry(ptl3, ptl3_index);
+			ensure_table_entry(ptl3, ptl3_index, storage);
 
 			auto ptl2 = (table_t *)(mapped_pml2ts + ptl4_index * ptl1_size + ptl3_index * page_size);
 
-			ensure_table_entry(ptl2, ptl2_index);
+			ensure_table_entry(ptl2, ptl2_index, storage);
 
 			phy_ptr = mapped_pml1ts + ptl4_index * ptl2_size + ptl3_index * ptl1_size + ptl2_index * page_size + ptl1_index * sizeof(size_t);
 		});
@@ -122,9 +129,9 @@ addr_t Memory::physical_address(const volatile void *virtual_address)
 	return physical_page((VirtualPage *)align_down((ptr_t)virtual_address, Arch::page_size)) + ((ptr_t)virtual_address & (Arch::page_size - 1));
 }
 
-void Memory::map(VirtualPage *address)
+void Memory::map(VirtualPage *address, AddressSpace *storage)
 {
-	*ensure_page_entry(address) = page_table_entry(Physical::allocate_page(), rw_data_flags);
+	*ensure_page_entry(address, storage) = page_table_entry(Physical::allocate_page(), rw_data_flags);
 }
 
 void Memory::unmap(VirtualPage *address)
@@ -140,9 +147,9 @@ void Memory::unmap(VirtualPage *address)
 	}
 }
 
-void Memory::map_address(VirtualPage *address, addr_t physical, size_t flags)
+void Memory::map_address(VirtualPage *address, addr_t physical, size_t flags, AddressSpace *storage)
 {
-	*ensure_page_entry(address) = page_table_entry(physical, flags);
+	*ensure_page_entry(address, storage) = page_table_entry(physical, flags);
 }
 
 void Memory::unmap_address(VirtualPage *address)
