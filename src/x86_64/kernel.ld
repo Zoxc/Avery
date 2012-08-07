@@ -16,7 +16,7 @@ SECTIONS
 	.bootstrap ALIGN(4) :
 	{
 		build/src/x86_64/multiboot/bootstrap/*(*)
-		build/kernel-bootstrap.o(*)
+		build/multiboot/bootstrap.o(*)
 	}
 % else
 	. = 0x100000;
