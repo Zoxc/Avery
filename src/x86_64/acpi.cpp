@@ -71,7 +71,7 @@ namespace ACPI
 
 		addr_t ebda = ((addr_t)*ebda_ptr_block.map_object<uint16_t>(0x40E)) << 4;
 
-		if(search_area(align_up(ebda, 16), 0x400, rsdp))
+		if(search_area(align_up<addr_t>(ebda, 16), 0x400, rsdp))
 			return;
 
 		panic("Didn't find the ACPI RSDP structure");
@@ -115,7 +115,7 @@ namespace ACPI
 				{
 					auto io = (MADT::IOAPIC *)entry;
 
-					IOAPIC::allocate(io->id, (Memory::PhysicalPage *)io->address);
+					IOAPIC::allocate(io->id, io->address);
 
 					break;
 				}

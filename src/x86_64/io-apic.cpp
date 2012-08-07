@@ -15,7 +15,7 @@ volatile uint32_t &IOAPIC::reg(size_t reg)
 	return registers[4];
 }
 
-IOAPIC *IOAPIC::allocate(size_t id, Memory::PhysicalPage *registers)
+IOAPIC *IOAPIC::allocate(size_t id, addr_t registers)
 {
 	assert(count < max_io_apics, "Too many I/O APICs");
 

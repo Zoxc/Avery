@@ -7,7 +7,7 @@ class FramebufferConsoleBackend:
 public:
 	typedef uint32_t color_t;
 
-	void get_buffer_info [[override]](void *&buffer, size_t &buffer_size);
+	void get_buffer_info [[override]](addr_t &buffer, size_t &buffer_size);
 	void new_buffer [[override]](void *buffer);
 	void put_char [[override]](size_t x, size_t y, char c, Console::Color text);
 	void scroll [[override]]();

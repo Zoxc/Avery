@@ -55,14 +55,14 @@ namespace Memory
 
 	void initialize();
 
-	void *map_physical_structure(Block *&block, ptr_t addr, size_t size, size_t flags = r_data_flags);
+	void *map_physical_structure(Block *&block, addr_t addr, size_t size, size_t flags = r_data_flags);
 
 	template<class T> T *map_physical_structure(Block *&block, ptr_t addr, size_t flags = r_data_flags)
 	{
 		return (T *)map_physical_structure(block, addr, sizeof(T), flags);
 	};
 
-	Block *map_physical(PhysicalPage *physical, size_t pages, size_t flags = r_data_flags);
+	Block *map_physical(addr_t physical, size_t pages, size_t flags = r_data_flags);
 
 	Block *allocate_block(Block::Type type, size_t pages = 1);
 	void free_block(Block *block);

@@ -79,14 +79,14 @@ namespace APIC
 	void initialize()
 	{
 		size_t base = Arch::read_msr(base_register);
-		Memory::PhysicalPage *mapped_physical;
+		addr_t registers_physical;
 
 		if(has_base)
-			mapped_physical = (Memory::PhysicalPage *)register_base;
+			registers_physical = register_base;
 		else
-			mapped_physical = (Memory::PhysicalPage *)(((base >> 12) & 0xFFFFFFFFFF) << 12);
+			registers_physical = ((base >> 12) & 0xFFFFFFFFFF) << 12;
 
-		auto mapped_virtual = Memory::map_physical(mapped_physical, 1, Memory::rw_data_flags | Memory::no_cache_flags)->base;
+		auto mapped_virtual = Memory::map_physical(registers_physical, 1, Memory::rw_data_flags | Memory::no_cache_flags)->base;
 
 		registers = (uint8_t *)mapped_virtual;
 

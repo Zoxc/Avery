@@ -10,13 +10,13 @@ template<class T> static inline const T& min(const T& a, const T& b)
 	return (a < b) ? a : b;
 }
 
-static inline size_t align_up(size_t value, size_t alignment)
+template<class T> static inline T align_up(T value, T alignment)
 {
 	alignment -= 1;
 	return (value + alignment) & ~alignment;
 };
 
-static inline size_t align_down(size_t value, size_t alignment)
+template<class T> static inline T align_down(T value, T alignment)
 {
 	return value & ~(alignment - 1);
 };

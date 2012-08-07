@@ -18,9 +18,9 @@ namespace Memory
 	
 	namespace Initial
 	{
-		void map_page_table(table_t &pt, size_t start_page_offset, size_t end_page_offset, PhysicalPage *base, size_t flags)
+		void map_page_table(table_t &pt, size_t start_page_offset, size_t end_page_offset, addr_t base, size_t flags)
 		{
-			assert_page_aligned((ptr_t)base);
+			assert_page_aligned((addr_t )base);
 
 			flags |= present_bit;
 			size_t start_index = align_down(start_page_offset, Arch::page_size) / Arch::page_size;
@@ -29,7 +29,7 @@ namespace Memory
 			assert(start_index < table_entries && start_index < end_index && end_index < table_entries, "Range out of bounds");
 			
 			for(size_t i = start_index; i < end_index; i++)
-				pt[i] = page_table_entry((PhysicalPage *)((ptr_t)base + (i - start_index) * Arch::page_size), flags);
+				pt[i] = page_table_entry(base + (i - start_index) * Arch::page_size, flags);
 		}
 
 		page_table_entry_t table_entry_from_data(void *table)
@@ -112,14 +112,14 @@ namespace Memory
 
 };
 
-Memory::PhysicalPage *Memory::physical_page(VirtualPage *virtual_address)
+addr_t Memory::physical_page(VirtualPage *virtual_address)
 {
 	return physical_page_from_table_entry(*get_page_entry(virtual_address));
 }
 
-ptr_t Memory::physical_address(const volatile void *virtual_address)
+addr_t Memory::physical_address(const volatile void *virtual_address)
 {
-	return (ptr_t)physical_page((VirtualPage *)align_down((ptr_t)virtual_address, Arch::page_size)) + ((ptr_t)virtual_address & (Arch::page_size - 1));
+	return physical_page((VirtualPage *)align_down((ptr_t)virtual_address, Arch::page_size)) + ((ptr_t)virtual_address & (Arch::page_size - 1));
 }
 
 void Memory::map(VirtualPage *address)
@@ -140,7 +140,7 @@ void Memory::unmap(VirtualPage *address)
 	}
 }
 
-void Memory::map_address(VirtualPage *address, PhysicalPage *physical, size_t flags)
+void Memory::map_address(VirtualPage *address, addr_t physical, size_t flags)
 {
 	*ensure_page_entry(address) = page_table_entry(physical, flags);
 }
@@ -174,17 +174,17 @@ void Memory::Initial::initialize()
 
 	// Map the physical memory allocator
 
-	map_page_table(ptl1_physical, 0, overhead, (PhysicalPage *)entry->base, write_bit | nx_bit);
+	map_page_table(ptl1_physical, 0, overhead, entry->base, write_bit | nx_bit);
 
 	// Map framebuffer to virtual memory
 
-	void *fb;
+	addr_t fb;
 	size_t fb_size;
 
 	console.get_buffer_info(fb, fb_size);
 
 	assert(fb_size < ptl1_size, "Framebuffer too large");
-	map_page_table(ptl1_frame, 0, fb_size, (PhysicalPage *)fb, write_bit | nx_bit);
+	map_page_table(ptl1_frame, 0, fb_size, (addr_t)fb, write_bit | nx_bit);
 
 	// Map kernel segments
 
@@ -213,7 +213,7 @@ void Memory::Initial::initialize()
 
 		size_t virtual_offset = hole.virtual_base - kernel_location;
 
-		map_page_table(ptl1_kernel, virtual_offset, virtual_offset + hole.end - hole.base, (PhysicalPage *)hole.base, flags);
+		map_page_table(ptl1_kernel, virtual_offset, virtual_offset + hole.end - hole.base, hole.base, flags);
 	}
 
 	load_pml4(physical_page((VirtualPage *)&ptl4_static));

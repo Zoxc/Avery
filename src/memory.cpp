@@ -208,24 +208,24 @@ namespace Memory
 		}
 	}
 
-	void *map_physical_structure(Block *&block, ptr_t addr, size_t size, size_t flags)
+	void *map_physical_structure(Block *&block, addr_t addr, size_t size, size_t flags)
 	{
-		ptr_t start = align_down(addr, Arch::page_size);
-		ptr_t end = align_up(addr + size, Arch::page_size);
+		addr_t start = align_down(addr, Arch::page_size);
+		addr_t end = align_up(addr + size, Arch::page_size);
 
-		block = map_physical((PhysicalPage *)start, (end - start) / Arch::page_size, flags);
+		block = map_physical(start, (end - start) / Arch::page_size, flags);
 
 		return ((uint8_t *)block->base + (addr & (Arch::page_size - 1)));
 	}
 
-	Block *map_physical(PhysicalPage *physical, size_t pages, size_t flags)
+	Block *map_physical(addr_t physical, size_t pages, size_t flags)
 	{
 		Block *block = allocate_block(Block::PhysicalView, pages);
 
 		auto end = block->base + pages;
 
-		for(auto p = block->base; p < end; ++p)
-			map_address(p, physical++, flags);
+		for(auto p = block->base; p < end; ++p, physical += Arch::page_size)
+			map_address(p, physical, flags);
 
 		return block;
 	}

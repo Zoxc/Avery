@@ -44,7 +44,7 @@ bool Memory::Physical::Hole::get(size_t index)
 	return result;
 }
 
-void Memory::Physical::free_page(PhysicalPage *page)
+void Memory::Physical::free_page(addr_t page)
 {
 	assert_page_aligned((ptr_t)page);
 
@@ -54,7 +54,7 @@ void Memory::Physical::free_page(PhysicalPage *page)
 
 		if(page >= hole.base && page < hole.end)
 		{
-			hole.clear(page - hole.base);
+			hole.clear((page - hole.base) / Arch::page_size);
 			return;
 		}
 	}
@@ -62,7 +62,7 @@ void Memory::Physical::free_page(PhysicalPage *page)
 	abort("Memory doesn't belong to any of the holes");
 }
 
-Memory::PhysicalPage *Memory::Physical::allocate_page()
+addr_t Memory::Physical::allocate_page()
 {
 	for(size_t i = 0; i < hole_count; ++i)
 	{
@@ -78,7 +78,7 @@ Memory::PhysicalPage *Memory::Physical::allocate_page()
 
 				*unit |= (size_t)1 << bit_index;
 
-				return hole.base + (unit - hole.bitmap) * Hole::bits_per_unit + bit_index;
+				return hole.base + ((unit - hole.bitmap) * Hole::bits_per_unit + bit_index) * Arch::page_size;
 			}
 		}
 	}
@@ -99,9 +99,9 @@ void Memory::Physical::initialize()
 		if(entry == Initial::entry)
 			overhead_hole = &hole;
 		
-		hole.base = (PhysicalPage *)entry->base;
+		hole.base = entry->base;
 		hole.pages = (entry->end - entry->base) / Arch::page_size;
-		hole.end = hole.base + hole.pages;
+		hole.end = entry->end;
 		hole.units = align_up(hole.pages, Hole::bits_per_unit) / Hole::bits_per_unit;
 	}
 	

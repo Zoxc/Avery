@@ -15,7 +15,7 @@ void Console::initialize(ConsoleBackend *backend)
 	this->backend = backend;
 }
 
-void Console::get_buffer_info(void *&buffer, size_t &buffer_size)
+void Console::get_buffer_info(addr_t &buffer, size_t &buffer_size)
 {
 	backend->get_buffer_info(buffer, buffer_size);
 }

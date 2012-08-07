@@ -24,14 +24,7 @@ namespace Memory
 		uint8_t data[Arch::page_size];
 	};
 
-	static_assert(sizeof(VirtualPage) == Arch::page_size, "Invalid VirtualPage size");
-
-	struct PhysicalPage
-	{
-		uint8_t data[Arch::page_size];
-	};
-
-	static_assert(sizeof(PhysicalPage) == Arch::page_size, "Invalid PhysicalPage size");
+	verify_size(VirtualPage, Arch::page_size);
 
 	const size_t page_size = Arch::page_size;
 	const size_t ptl1_size = table_entries * page_size;
@@ -65,7 +58,7 @@ namespace Memory
 	void map(VirtualPage *address);
 	void unmap(VirtualPage *address);
 
-	void map_address(VirtualPage *address, PhysicalPage *physical, size_t flags);
+	void map_address(VirtualPage *address, addr_t physical, size_t flags);
 	void unmap_address(VirtualPage *address);
 
 	static inline void assert_page_aligned(size_t address)
@@ -73,23 +66,23 @@ namespace Memory
 		assert((address & (Arch::page_size - 1)) == 0, "Unaligned page");
 	}
 
-	static inline page_table_entry_t page_table_entry(PhysicalPage *page, size_t flags)
+	static inline page_table_entry_t page_table_entry(addr_t page, size_t flags)
 	{
-		assert_page_aligned((ptr_t)page);
+		assert_page_aligned(page);
 
-		return (page_table_entry_t)((ptr_t)page | flags);
+		return (page_table_entry_t)(page | flags);
 	}
 
-	static inline PhysicalPage *physical_page_from_table_entry(page_table_entry_t entry)
+	static inline addr_t physical_page_from_table_entry(page_table_entry_t entry)
 	{
-		return (PhysicalPage *)((ptr_t)entry & ~(page_flags));
+		return ((addr_t)entry & ~(page_flags));
 	}
 
 	page_table_entry_t *get_page_entry(VirtualPage *pointer);
 	page_table_entry_t *ensure_page_entry(VirtualPage *pointer);
 
-	PhysicalPage *physical_page(VirtualPage *virtual_address);
-	ptr_t physical_address(const volatile void *virtual_address);
+	addr_t physical_page(VirtualPage *virtual_address);
+	addr_t physical_address(const volatile void *virtual_address);
 
 	namespace Initial
 	{
@@ -105,7 +98,7 @@ namespace Memory
 	
 	VirtualPage *simple_allocate(size_t pages = 1);
 
-	static inline void load_pml4(PhysicalPage *pml4t)
+	static inline void load_pml4(addr_t pml4t)
 	{
 		asm volatile ("mov %%rax, %%cr3" :: "a"(pml4t) : "memory");
 	}

@@ -51,7 +51,7 @@ public:
 
 	void initialize(ConsoleBackend *backend);
 
-	void get_buffer_info(void *&buffer, size_t &buffer_size);
+	void get_buffer_info(addr_t &buffer, size_t &buffer_size);
 	void new_buffer(void *buffer);
 	
 private:
@@ -84,7 +84,7 @@ public:
 	virtual void color(Console::Color text) = 0;
 	virtual void print(char c) = 0;
 	virtual void clear() = 0;
-	virtual void get_buffer_info(void *&buffer, size_t &buffer_size) = 0;
+	virtual void get_buffer_info(addr_t &buffer, size_t &buffer_size) = 0;
 	virtual void new_buffer(void *buffer) = 0;
 };
 

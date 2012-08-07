@@ -87,9 +87,9 @@ void FramebufferConsoleBackend::put_char(size_t x, size_t y, char c, Console::Co
 	blit_char(left + x * font_width, top + y * font_height_pad, c, color_map[text]);
 }
 
-void FramebufferConsoleBackend::get_buffer_info(void *&buffer, size_t &buffer_size)
+void FramebufferConsoleBackend::get_buffer_info(addr_t &buffer, size_t &buffer_size)
 {
-	buffer = (void *)fb;
+	buffer = (addr_t)fb;
 	buffer_size = fb_size;
 }
 

@@ -47,9 +47,9 @@ void VGAConsoleBackend::put_char(size_t x, size_t y, char c, Console::Color text
 	*(fb + (y + border) * char_width + x + border) = (uint8_t)c | (color_map[text] << 8);
 }
 
-void VGAConsoleBackend::get_buffer_info(void *&buffer, size_t &buffer_size)
+void VGAConsoleBackend::get_buffer_info(addr_t &buffer, size_t &buffer_size)
 {
-	buffer = (void *)fb;
+	buffer = (addr_t)fb;
 	buffer_size = char_count * sizeof(uint16_t);
 }
 

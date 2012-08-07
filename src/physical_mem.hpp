@@ -10,8 +10,8 @@ namespace Memory
 		{
 			typedef size_t unit_t;
 
-			PhysicalPage *base;
-			PhysicalPage *end;
+			addr_t base;
+			addr_t end;
 			size_t pages;
 			size_t units;
 			unit_t *bitmap;
@@ -31,8 +31,8 @@ namespace Memory
 			}
 		};
 
-		PhysicalPage *allocate_page();
-		void free_page(PhysicalPage *page);
+		addr_t allocate_page();
+		void free_page(addr_t page);
 
 		void initialize();
 	};

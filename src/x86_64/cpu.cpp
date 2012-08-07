@@ -42,11 +42,11 @@ extern "C" void *ap_bootstrap_end;
 extern "C" void *ap_bootstrap_mapped;
 extern "C" void *ap_bootstrap_info;
 
-size_t ap_bootstrap_page = (ptr_t)&ap_bootstrap_mapped;
+addr_t ap_bootstrap_page = (addr_t)&ap_bootstrap_mapped;
 
-size_t ap_bootstrap_offset(void *&pointer)
+addr_t ap_bootstrap_offset(void *&pointer)
 {
-	return (ptr_t)&pointer - ap_bootstrap_page;
+	return (addr_t)&pointer - ap_bootstrap_page;
 }
 
 APBootstrapInfo *setup_ap_bootstrap()
@@ -55,13 +55,13 @@ APBootstrapInfo *setup_ap_bootstrap()
 
 	assert(((ptr_t)&ap_bootstrap_end - (ptr_t)&ap_bootstrap_start) <= Arch::page_size, "CPU bootstrap code too large");
 
-	Memory::map_address((Memory::VirtualPage *)ap_bootstrap_page, (Memory::PhysicalPage *)ap_bootstrap_page, Memory::write_bit | Memory::present_bit);
+	Memory::map_address((Memory::VirtualPage *)ap_bootstrap_page, ap_bootstrap_page, Memory::write_bit | Memory::present_bit);
 
 	memcpy((void *)ap_bootstrap_page, &ap_bootstrap_start, Arch::page_size);
 
 	APBootstrapInfo *info = (APBootstrapInfo *)(ap_bootstrap_page + ap_bootstrap_offset(ap_bootstrap_info));
 
-	info->pml4 = (ptr_t)Memory::physical_page((Memory::VirtualPage *)&Memory::ptl4_static);
+	info->pml4 = Memory::physical_page((Memory::VirtualPage *)&Memory::ptl4_static);
 	info->apic_registers = APIC::get_registers();
 	info->cpu_count = CPU::count;
 	info->cpu_size = sizeof(CPU);

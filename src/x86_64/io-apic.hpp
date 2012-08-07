@@ -16,5 +16,5 @@ struct IOAPIC
 	static size_t count;
 	static IOAPIC ios[max_io_apics];
 
-	static IOAPIC *allocate(size_t id, Memory::PhysicalPage *registers);
+	static IOAPIC *allocate(size_t id, addr_t registers);
 };
