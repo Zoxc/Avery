@@ -1,0 +1,6 @@
+OUTPUT_FORMAT(elf64-x86-64)
+ENTRY(entry)
+SECTIONS
+{
+	. = 0x100000;
+}

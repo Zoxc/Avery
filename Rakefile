@@ -8,11 +8,67 @@ def preprocess(input, output, binding)
 	File.open(output, 'w') { |f| f.write output_content }
 end
 
+def assemble(build, source, objects)
+	assembly = source.output(".s")
+	object_file = source.output(".o")
+	
+	build.process object_file, source.path do
+		build.execute 'clang', '-E', source.path, '-o', assembly
+		build.execute 'x86_64-elf-as', assembly, '-o', object_file
+	end
+	
+	objects << object_file
+end
+
+def bitcode_link(build, object, bitcode, bitcodes, options)
+	build.process object, *bitcodes do
+		build.execute 'llvm-link', *bitcodes, "-o=#{bitcode}"
+		build.execute 'llc', bitcode, '-filetype=obj', *options, '-relocation-model=static', '-mattr=-sse,-sse2,-mmx', '-O2', '-o', object
+	end
+end
+
+build_user = proc do
+	build = Build.new('build', 'usr_info.yml')
+	
+	sources = build.package('usr/**/*')
+	user_bitcode = build.output "usr.bc"
+	user_object = build.output "usr.o"
+	user_binary = build.output "usr.elf"
+	
+	bitcodes = []
+	objects = [user_object]
+	
+	build.run do
+		sources.each do |source|
+			case source.ext
+				when '.S'
+					assemble(build, source, objects)
+				when '.cpp', '.c'
+					bitcode = source.output(".o")
+					
+					build.cpp(source)
+					build.process bitcode, source.path do
+						build.execute 'clang', '-target', 'x86_64-generic-generic', '-std=gnu++11', '-emit-llvm', '-c', '-ffreestanding', '-Wall', '-Wextra', '-fno-rtti', '-fno-exceptions', '-fno-unwind-tables', '-fno-inline', source.path, '-o', bitcode
+					end
+					
+					bitcodes << bitcode
+			end
+		end
+	
+		puts "Linking..."
+		
+		bitcode_link(build, user_object, build.output("usr.bc"), bitcodes, ['-code-model=large'])
+		
+		build.process user_binary, *objects do
+			build.execute 'x86_64-elf-ld', '-z', 'max-page-size=0x1000', '-T', 'usr/link.ld', *objects, '-o', user_binary
+		end
+	end
+end
+
 type = :multiboot
 build_kernel = proc do
 	build = Build.new('build', 'info.yml')
 	kernel_binary = build.output "#{type}/kernel.elf"
-	kernel_bitcode = build.output "#{type}/kernel.bc"
 	kernel_bitcode_bootstrap = build.output "#{type}/bootstrap.bc"
 	kernel_object = build.output "#{type}/kernel.o"
 	kernel_assembly_bootstrap = build.output "#{type}/bootstrap.s"
@@ -39,15 +95,7 @@ build_kernel = proc do
 		sources.each do |source|
 			case source.ext
 				when '.S'
-					assembly = source.output(".s")
-					object_file = source.output(".o")
-					
-					build.process object_file, source.path do
-						build.execute 'clang', '-E', source.path, '-o', assembly
-						build.execute 'x86_64-elf-as', assembly, '-o', object_file
-					end
-					
-					objects << object_file
+					assemble(build, source, objects)
 				when '.cpp', '.c'
 					options = ['-target', 'x86_64-generic-generic']
 					
@@ -95,10 +143,7 @@ build_kernel = proc do
 			preprocess(i, kernel_linker_script, binding)
 		end
 		
-		build.process kernel_object, *bitcodes do
-			build.execute 'llvm-link', *bitcodes, "-o=#{kernel_bitcode}"
-			build.execute 'llc', kernel_bitcode, '-filetype=obj', '-disable-red-zone', '-code-model=kernel', '-relocation-model=static', '-mattr=-sse,-sse2,-mmx', '-O2', '-o', kernel_object
-		end
+		bitcode_link(build, kernel_object, build.output("#{type}/kernel.bc"), bitcodes, ['-disable-red-zone', '-code-model=kernel'])
 		
 		build.process kernel_binary, *objects, kernel_linker_script do
 			build.execute 'x86_64-elf-ld', '-z', 'max-page-size=0x1000', '-T', kernel_linker_script, *objects, '-o', kernel_binary
@@ -111,6 +156,10 @@ build_kernel = proc do
 				FileUtils.cp kernel_binary, "emu/hda/efi/boot"
 		end
 	end
+end
+
+task :user do
+	build_user.call
 end
 
 task :build do

@@ -58,3 +58,5 @@ src/util/allocator.hpp
 src/util/allocator.cpp
 src/process.hpp
 src/process.cpp
+usr/link.ld
+usr/test.cpp
