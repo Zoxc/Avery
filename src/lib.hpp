@@ -6,6 +6,12 @@ namespace Runtime
 	void initialize();
 };
 
+void *malloc(size_t bytes);
+void free(void *mem);
+
+void *operator new(size_t bytes);
+void operator delete(void *mem);
+
 extern "C"
 {
 	void memcpy(void *dst, const void *src, size_t size);

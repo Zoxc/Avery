@@ -1,6 +1,7 @@
 #include "common.hpp"
 #include "lib.hpp"
 #include "console.hpp"
+#include "memory.hpp"
 
 namespace Runtime
 {
@@ -42,6 +43,65 @@ void panic(const char *message)
 	console.panic().s(message).endl();
 
 	__builtin_unreachable();
+}
+
+struct MallocHeader
+{
+	static const size_t magic_value = 0xBAD0ABBA;
+
+	Memory::Block *block;
+	size_t bytes;
+	size_t magic;
+};
+
+struct MallocFooter
+{
+	static const size_t magic_value = 0xBEEFABBA;
+
+	size_t magic;
+};
+
+void *malloc(size_t bytes)
+{
+	size_t pages = align_up(bytes + sizeof(MallocHeader) + sizeof(MallocFooter), Arch::page_size) / Arch::page_size;
+
+	Memory::Block *block = Memory::allocate_block(Memory::Block::Default, pages);
+
+	for(size_t p = 0; p < block->pages; ++p)
+		Memory::map(block->base + p);
+
+	MallocHeader *header = (MallocHeader *)block->base;
+	uint8_t *result = (uint8_t *)(header + 1);
+	MallocFooter *footer = (MallocFooter *)(result + bytes);
+
+	header->magic = MallocHeader::magic_value;
+	header->block = block;
+	header->bytes = bytes;
+
+	footer->magic = MallocFooter::magic_value;
+
+	return result;
+}
+
+void free(void *mem)
+{
+	MallocHeader *header = (MallocHeader *)mem - 1;
+	MallocFooter *footer = (MallocFooter *)((uint8_t *)mem + header->bytes);
+
+	assert(header->magic == MallocHeader::magic_value, "Invalid malloc header magic");
+	assert(footer->magic == MallocFooter::magic_value, "Invalid malloc footer magic");
+
+	Memory::free_block(header->block);
+}
+
+void *operator new(size_t bytes)
+{
+	return malloc(bytes);
+}
+
+void operator delete(void *mem)
+{
+	free(mem);
 }
 
 extern "C"
