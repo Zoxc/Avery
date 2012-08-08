@@ -1,18 +1,19 @@
-#include "memory.hpp"
+#include "user-memory.hpp"
 
-namespace Memory
+namespace User
 {
-	Allocator allocator;
-
-	void initialize()
-	{
-		allocator.initialize((VirtualPage *)Memory::allocator_start, (VirtualPage *)Memory::allocator_end);
-	}
-
-	Allocator::Allocator() :
+	Allocator::Allocator(Memory::VirtualPage *start, Memory::VirtualPage *end) :
 		current_block(0),
 		end_block(0)
 	{
+		Block *first = allocate_block();
+
+		first->base = start;
+		first->pages = end - start;
+		first->type = Block::Free;
+
+		free_list.append(first);
+		linear_list.append(first);
 	}
 
 	void Allocator::dump()
@@ -65,58 +66,101 @@ namespace Memory
 		if((current_block + 1) < end_block)
 			return current_block++;
 
-		// Steal a page from the first free block and use it for a new block array
+		Memory::Block *overhead = Memory::allocate_block(Memory::Block::UserAllocator);
 
-		Block *free = free_list.first;
+		Memory::map(overhead->base, 1);
 
-		assert(free, "Out of virtual memory");
-		assert(free->pages != 0, "Empty block found");
+		overhead_list.append(overhead);
 
-		--free->pages;
-		VirtualPage *overhead = free->base++;
+		Block *first_block = (Block *)overhead->base;
 
-		// Mark this page as used
+		current_block = first_block + 1;
+		end_block = (Block *)(overhead->base + 1);
 
-		Block *overhead_block = (Block *)overhead;
-
-		current_block = overhead_block + 1;
-		end_block = (Block *)(overhead + 1);
-
-		assert(current_block < end_block, "Overflow");
-
-		map(overhead, 1);
-
-		overhead_block->type = Block::Overhead;
-		overhead_block->base = overhead;
-		overhead_block->pages = 1;
-
-		linear_list.insert_before(overhead_block, free);
-
-		if(free->pages == 0) // The block we stole a page from is empty so we can reuse it
-		{
-			linear_list.remove(free);
-			free_list.remove(free);
-			return free;
-		}
-
-		return current_block++;
+		return first_block;
 	}
 
-	void Allocator::initialize(VirtualPage *start, VirtualPage *end)
+	Block *Allocator::allocate_at(Memory::VirtualPage *address, Block::Type type, size_t pages)
 	{
-		first_block.base = start;
-		first_block.pages = end - start;
-		first_block.type = Block::Free;
+		assert(pages > 0, "Can't allocate zero pages");
 
-		free_list.append(&first_block);
-		linear_list.append(&first_block);
+		Block *current = free_list.first;
+
+		auto result_end = address + pages;
+
+		while(current)
+		{
+			auto current_end = current->base + current->pages;
+
+			if(current->base > address || current_end <= address)
+			{
+				current = current->list_next;
+				continue;
+			}
+
+			if(current_end < result_end)
+				return 0;
+
+			Block *result;
+
+			if(current->base != address)
+			{
+				current->pages = address - current->base;
+
+				result = allocate_block();
+
+				result->type = type;
+				result->base = address;
+				result->pages = pages;
+
+				linear_list.insert_after(result, current);
+
+				if(current_end != result_end)
+				{
+					Block *top = allocate_block();
+
+					top->type = Block::Free;
+					top->base = result_end;
+					top->pages = current_end - result_end;
+
+					linear_list.insert_after(top, result);
+					free_list.append(top);
+				}
+
+				return result;
+			}
+			else
+			{
+				if(current->pages == pages) // It fits perfectly
+				{
+					current->type = type;
+
+					free_list.remove(current);
+
+					return current;
+				}
+
+				result = allocate_block();
+
+				result->type = type;
+				result->base = address;
+				result->pages = pages;
+
+				linear_list.insert_after(result, current);
+
+				current->base += pages;
+				current->pages -= pages;
+			}
+
+			return result;
+		}
+
+		return 0;
 	}
 
 	Block *Allocator::allocate(Block::Type type, size_t pages)
 	{
 		assert(pages > 0, "Can't allocate zero pages");
-
-		Block *result = allocate_block(); // Allocate a result block first since it can modify free regions
 
 		Block *current = free_list.first;
 
@@ -126,13 +170,14 @@ namespace Memory
 			{
 				if(current->pages == pages) // It fits perfectly
 				{
-					free_block_list.append(result);
 					free_list.remove(current);
 
 					current->type = type;
 
 					return current;
 				}
+
+				Block *result = allocate_block();
 
 				linear_list.insert_before(result, current);
 
@@ -148,17 +193,14 @@ namespace Memory
 			current = current->list_next;
 		}
 
-		panic("Out of virtual memory");
+		return 0;
 	}
 
 	void Allocator::free(Block *block)
 	{
 		assert(block, "Invalid block");
 
-		if(block->type == Block::PhysicalView)
-			unmap_address(block->base, block->pages);
-		else
-			unmap(block->base, block->pages);
+		Memory::unmap(block->base, block->pages);
 
 		Block *prev = block->linear_prev;
 		Block *next = block->linear_next;
@@ -200,34 +242,5 @@ namespace Memory
 			current->type = Block::Free;
 			free_list.append(current);
 		}
-	}
-
-	void *map_physical_structure(Block *&block, addr_t addr, size_t size, size_t flags)
-	{
-		addr_t start = align_down(addr, Arch::page_size);
-		addr_t end = align_up(addr + size, Arch::page_size);
-
-		block = map_physical(start, (end - start) / Arch::page_size, flags);
-
-		return ((uint8_t *)block->base + (addr & (Arch::page_size - 1)));
-	}
-
-	Block *map_physical(addr_t physical, size_t pages, size_t flags)
-	{
-		Block *block = allocate_block(Block::PhysicalView, pages);
-
-		map_address(block->base, pages, physical, flags);
-
-		return block;
-	}
-
-	Block *allocate_block(Block::Type type, size_t pages)
-	{
-		return allocator.allocate(type, pages);
-	}
-
-	void free_block(Block *block)
-	{
-		return allocator.free(block);
 	}
 };

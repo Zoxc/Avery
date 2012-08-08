@@ -1,6 +1,7 @@
 #pragma once
 #include "../common.hpp"
 #include "../console.hpp"
+#include "init/init.hpp"
 
 namespace Arch
 {

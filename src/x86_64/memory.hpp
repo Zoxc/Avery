@@ -40,8 +40,9 @@ namespace Memory
 	const size_t ptl3_size = table_entries * ptl2_size;
 	const size_t ptl4_size = table_entries * ptl3_size;
 
-	const size_t write_bit = 1ul << 1;
 	const size_t present_bit = 1ul << 0;
+	const size_t write_bit = 1ul << 1;
+	const size_t usermode_bit = 1ul << 2;
 	const size_t writethrough_bit = 1ul << 3;
 	const size_t cache_disable_bit = 1ul << 4;
 	const size_t pat_ptl1_bit = 1ul << 7;
@@ -63,11 +64,12 @@ namespace Memory
 	const ptr_t mapped_pml2ts = kernel_location - ptl2_size;
 	const ptr_t mapped_pml3ts = kernel_location + ptl1_size * 511;
 
-	void map(VirtualPage *address, AddressSpace *storage = 0);
-	void unmap(VirtualPage *address);
+	void protect(VirtualPage *address, size_t pages, size_t flags);
+	void map(VirtualPage *address, size_t pages, size_t flags = rw_data_flags, AddressSpace *storage = 0);
+	void unmap(VirtualPage *address, size_t pages);
 
-	void map_address(VirtualPage *address, addr_t physical, size_t flags, AddressSpace *storage = 0);
-	void unmap_address(VirtualPage *address);
+	void map_address(VirtualPage *address, size_t pages, addr_t physical, size_t flags, AddressSpace *storage = 0);
+	void unmap_address(VirtualPage *address, size_t pages);
 
 	static inline void assert_page_aligned(size_t address)
 	{
@@ -104,6 +106,9 @@ namespace Memory
 	const ptr_t allocator_start = low_memory_start + ptl1_size;
 	const ptr_t allocator_end = physical_allocator_memory + ptl2_size - page_size; // Subtract page_size to avoid overflow
 	
+	const ptr_t user_start = page_size;
+	const ptr_t user_end = lower_half_end;
+
 	VirtualPage *simple_allocate(size_t pages = 1);
 
 	static inline void load_pml4(addr_t pml4t)

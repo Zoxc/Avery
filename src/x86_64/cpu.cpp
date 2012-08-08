@@ -55,7 +55,7 @@ APBootstrapInfo *setup_ap_bootstrap()
 
 	assert(((ptr_t)&ap_bootstrap_end - (ptr_t)&ap_bootstrap_start) <= Arch::page_size, "CPU bootstrap code too large");
 
-	Memory::map_address((Memory::VirtualPage *)ap_bootstrap_page, ap_bootstrap_page, Memory::write_bit | Memory::present_bit);
+	Memory::map_address((Memory::VirtualPage *)ap_bootstrap_page, 1, ap_bootstrap_page, Memory::write_bit | Memory::present_bit);
 
 	memcpy((void *)ap_bootstrap_page, &ap_bootstrap_start, Arch::page_size);
 
@@ -130,14 +130,13 @@ void CPU::initialize()
 
 		const size_t stack_pages = 5;
 
-		auto stack = Memory::allocate_block(Memory::Block::Stack, stack_pages);
+		auto stack = Memory::allocate_block(Memory::Block::Stack, stack_pages + 1);
 
 		cpus[i].started = false;
 		cpus[i].stack = stack;
-		cpus[i].stack_end = stack->base +stack->pages;
+		cpus[i].stack_end = stack->base + stack->pages;
 
-		for(size_t p = 1; p < stack_pages; ++p)
-			Memory::map(stack->base + p);
+		Memory::map(stack->base + 1, stack_pages);
 
 		console.s("Starting CPU with id: ").u(cpus[i].acpi_id).endl();
 

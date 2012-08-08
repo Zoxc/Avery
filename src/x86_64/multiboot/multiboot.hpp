@@ -23,6 +23,14 @@ struct multiboot_mmap
 	uint32_t type;
 } __attribute__((packed));
 
+struct multiboot_mod
+{
+	uint32_t start;
+	uint32_t end;
+	uint32_t name;
+	uint32_t reserved;
+} __attribute__((packed));
+
 typedef struct
 {
 	uint32_t flags;

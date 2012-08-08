@@ -15,8 +15,8 @@ namespace Params
 	struct MemoryRange
 	{
 		size_t type;
-		size_t base;
-		size_t end;
+		addr_t base;
+		addr_t end;
 		struct MemoryRange *next;
 	};
 
@@ -24,16 +24,18 @@ namespace Params
 	{
 		SegmentCode,
 		SegmentReadOnlyData,
-		SegmentData
+		SegmentData,
+		SegmentModule
 	};
 
 	struct Segment
 	{
 		size_t type;
-		size_t base;
-		size_t end;
-		size_t virtual_base;
+		addr_t base;
+		addr_t end;
+		ptr_t virtual_base;
 		size_t found;
+		char name[0x100];
 	};
 
 	const size_t memory_range_max = 0x100;

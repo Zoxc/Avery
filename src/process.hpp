@@ -1,13 +1,16 @@
 #pragma once
 #include "arch.hpp"
-#include "memory.hpp"
+#include "user-memory.hpp"
 #include "util/vector.hpp"
 
 class Process
 {
+public:
 	size_t id;
-	Memory::Allocator allocator;
+	User::Allocator allocator;
 	Memory::AddressSpace address_space;
+
+	Process();
 };
 
 extern Vector<Process *> processes;

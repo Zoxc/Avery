@@ -5,6 +5,7 @@
 #include "memory.hpp"
 #include "physical_mem_init.hpp"
 #include "physical_mem.hpp"
+#include "init/init.hpp"
 
 void kernel()
 {
@@ -23,6 +24,8 @@ void kernel()
 	Arch::initialize();
 
 	Arch::enable_interrupts();
+
+	Init::load_modules();
 
 	while(true)
 		Arch::halt();

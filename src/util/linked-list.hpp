@@ -29,22 +29,32 @@ public:
 			last = node->*prev;
 	}
 
-	void insert_before(T *node, T *before)
+	template<T *T::*a, T *T::*b, T *LinkedList::*abs> void insert_position(T *node, T *target)
 	{
 		assert(node != 0);
-		assert(before != 0);
+		assert(target != 0);
 
-		node->*next = before;
+		node->*a = target;
 
-		T *prev_before = before->*prev;
+		T *target_attr = target->*b;
 
-		if(prev_before)
-			prev_before->*next = node;
+		if(target_attr)
+			target_attr->*a = node;
 		else
-			first = node;
+			this->*abs = node;
 
-		node->*prev = prev_before;
-		before->*prev = node;
+		node->*b = target_attr;
+		target->*b = node;
+	}
+
+	void insert_before(T *node, T *before)
+	{
+		insert_position<next, prev, &LinkedList::first>(node, before);
+	}
+
+	void insert_after(T *node, T *after)
+	{
+		insert_position<prev, next, &LinkedList::last>(node, after);
 	}
 
 	void append(T *node)

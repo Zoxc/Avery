@@ -67,8 +67,7 @@ void *malloc(size_t bytes)
 
 	Memory::Block *block = Memory::allocate_block(Memory::Block::Default, pages);
 
-	for(size_t p = 0; p < block->pages; ++p)
-		Memory::map(block->base + p);
+	Memory::map(block->base, block->pages);
 
 	MallocHeader *header = (MallocHeader *)block->base;
 	uint8_t *result = (uint8_t *)(header + 1);
@@ -136,43 +135,32 @@ extern "C"
 		return ptr;
 	}
 
-	unsigned long strcmp(const char *str1, const char *str2)
+	int strncmp(const char *s1, const char *s2, size_t n)
 	{
-		while(*str1 && *str2 && (*str1++ == *str2++));
-		
-		if(*str1 == '\0' && *str2 == '\0')
-			return 0;
-		
-		if(*str1 == '\0')
-			return -1;
-		else
-			return 1;
-	}
-
-	bool strrcmp(const char *start, const char *stop, const char *str)
-	{
-		while(*start == *str)
+		while ( *s1 && n && ( *s1 == *s2 ) )
 		{
-			if(start >= stop)
-				return false;
-			
-			start++;
-			str++;
-	 
-			if(*str == 0)
-				return start == stop;
+			++s1;
+			++s2;
+			--n;
 		}
-		
-		return false;
+
+		if (n == 0)
+			return 0;
+		else
+			return ( *(unsigned char *)s1 - *(unsigned char *)s2 );
 	}
 
-	unsigned long strlen(const char *src)
+	char *strncpy(char *s1, const char *s2, size_t n)
 	{
-		unsigned long i = 0;
-		
-		while (*src++)
-			i++;
-		
-		return i;
+		char *rc = s1;
+
+		while ( ( n > 0 ) && ( *s1++ = *s2++ ) )
+			--n;
+
+		while ( n-- > 1 )
+			*s1++ = '\0';
+
+		return rc;
 	}
+
 };

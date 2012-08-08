@@ -14,6 +14,7 @@ namespace Memory
 			Overhead,
 			Default,
 			Stack,
+			UserAllocator,
 			PhysicalView
 		};
 
@@ -21,11 +22,13 @@ namespace Memory
 		Memory::VirtualPage *base;
 		size_t pages;
 
-		Block *list_prev;
-		Block *list_next;
-
 		Block *linear_prev;
 		Block *linear_next;
+
+		// Free to be used when allocated
+
+		Block *list_prev;
+		Block *list_next;
 	};
 
 	class Allocator

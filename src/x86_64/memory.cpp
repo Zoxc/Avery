@@ -129,34 +129,53 @@ addr_t Memory::physical_address(const volatile void *virtual_address)
 	return physical_page((VirtualPage *)align_down((ptr_t)virtual_address, Arch::page_size)) + ((ptr_t)virtual_address & (Arch::page_size - 1));
 }
 
-void Memory::map(VirtualPage *address, AddressSpace *storage)
+void Memory::protect(VirtualPage *address, size_t pages, size_t flags)
 {
-	*ensure_page_entry(address, storage) = page_table_entry(Physical::allocate_page(), rw_data_flags);
-}
-
-void Memory::unmap(VirtualPage *address)
-{
-	auto page_entry = get_page_entry(address);
-
-	if((size_t)*page_entry & present_bit)
+	for(VirtualPage *end = address + pages; address < end; ++address)
 	{
-		Physical::free_page(physical_page_from_table_entry(*page_entry));
-		*page_entry = 0;
+		auto entry = get_page_entry(address);
+		*entry = page_table_entry(physical_page_from_table_entry(*entry), flags);
 
 		invalidate_page(address);
 	}
 }
 
-void Memory::map_address(VirtualPage *address, addr_t physical, size_t flags, AddressSpace *storage)
+void Memory::map(VirtualPage *address, size_t pages, size_t flags, AddressSpace *storage)
 {
-	*ensure_page_entry(address, storage) = page_table_entry(physical, flags);
+	for(VirtualPage *end = address + pages; address < end; ++address)
+		*ensure_page_entry(address, storage) = page_table_entry(Physical::allocate_page(), flags);
 }
 
-void Memory::unmap_address(VirtualPage *address)
+void Memory::unmap(VirtualPage *address, size_t pages)
 {
-	*get_page_entry(address) = 0;
+	for(VirtualPage *end = address + pages; address < end; ++address)
+	{
+		auto page_entry = get_page_entry(address);
 
-	invalidate_page(address);
+		if((size_t)*page_entry & present_bit)
+		{
+			Physical::free_page(physical_page_from_table_entry(*page_entry));
+			*page_entry = 0;
+
+			invalidate_page(address);
+		}
+	}
+}
+
+void Memory::map_address(VirtualPage *address, size_t pages, addr_t physical, size_t flags, AddressSpace *storage)
+{
+	for(VirtualPage *end = address + pages; address < end; ++address, physical += page_size)
+		*ensure_page_entry(address, storage) = page_table_entry(physical, flags);
+}
+
+void Memory::unmap_address(VirtualPage *address, size_t pages)
+{
+	for(VirtualPage *end = address + pages; address < end; ++address)
+	{
+		*get_page_entry(address) = 0;
+
+		invalidate_page(address);
+	}
 }
 
 void Memory::Initial::initialize()
@@ -203,6 +222,9 @@ void Memory::Initial::initialize()
 
 		switch(hole.type)
 		{
+		case Params::SegmentModule:
+			continue;
+
 		case Params::SegmentCode:
 			flags &= ~nx_bit;
 			break;

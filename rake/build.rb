@@ -64,11 +64,17 @@ class Build
 			result
 		end
 		
+		def exists?
+			File.exists? @path
+		end
+		
 		def digest
 			@digest ||= begin
-				digest = Digest::SHA2.new(256)
-				digest.file @path
-				digest.hexdigest
+				if exists?
+					digest = Digest::SHA2.new(256)
+					digest.file @path
+					digest.hexdigest
+				end
 			end
 		end
 	end

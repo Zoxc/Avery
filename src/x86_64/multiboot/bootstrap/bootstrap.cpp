@@ -87,6 +87,12 @@ extern "C" void setup_long_mode(void *multiboot, uint32_t magic)
 		return;
 	}
 	
+	if((size_t)multiboot + 0x1000 > 0x200000)
+	{
+		error("Multiboot structure loaded too high in memory");
+		return;
+	}
+
 	// setup the gdt pointer
 	gdt64_pointer.limit = sizeof(gdt) - 1;
 	gdt64_pointer.base = offset(gdt);
@@ -149,8 +155,8 @@ extern "C" void setup_long_mode(void *multiboot, uint32_t magic)
 	// enable PAE
 	asm volatile ("movl %%cr4, %%eax; orl %0, %%eax; movl %%eax, %%cr4" :: "i"(1 << 5) : "eax");
 	
-	// enable paging
-	asm volatile ("movl %%cr0, %%eax; orl %0, %%eax; movl %%eax, %%cr0" :: "i"(1 << 31) : "eax");
+	// enable paging and turn on write protect
+	asm volatile ("movl %%cr0, %%eax; orl %0, %%eax; movl %%eax, %%cr0" :: "i"((1 << 31) | (1 << 16)) : "eax");
 	
 	// do a far jump into long mode, pass multiboot information in %ecx
 	asm volatile ("ljmp %0, $bootstrap.64" :: "i"(sizeof(struct descriptor) * 1), "c"(multiboot));

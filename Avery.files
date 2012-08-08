@@ -60,3 +60,10 @@ src/process.hpp
 src/process.cpp
 usr/link.ld
 usr/test.cpp
+src/user-memory.hpp
+src/user-memory.cpp
+src/init/init.hpp
+src/init/init.cpp
+src/x86_64/init/init.hpp
+src/x86_64/init/init.cpp
+src/x86_64/init/elf.h

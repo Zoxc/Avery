@@ -41,6 +41,23 @@ extern "C" void boot_entry(const multiboot_t &info)
 	setup_segment(Params::info.segments[segment_count++], Params::SegmentReadOnlyData, rodata_start, data_start);
 	setup_segment(Params::info.segments[segment_count++], Params::SegmentData, data_start, kernel_end);
 
+	for(size_t i = 0; i < info.mods_count; ++i)
+	{
+		multiboot_mod *mod = (multiboot_mod *)info.mods_addr + i;
+
+		auto &segment = Params::info.segments[segment_count++];
+
+		segment.type = Params::SegmentModule;
+		segment.base = mod->start;
+		segment.end = mod->end;
+
+		size_t name_size = sizeof(segment.name) - 1;
+
+		strncpy(segment.name, (char *)mod->name, name_size);
+
+		segment.name[name_size] = 0;
+	}
+
 	Params::info.segment_count = segment_count;
 
 	auto mmap_end = (size_t)info.mmap_addr + info.mmap_length;

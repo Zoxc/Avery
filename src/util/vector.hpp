@@ -219,6 +219,20 @@ template<class T, class A = StandardAllocator> class Vector
 				table[i] = table[i + 1];
 		}
 		
+		void insert(T entry, size_t index)
+		{
+			assert(index < _size);
+
+			expand(1);
+
+			for(size_t i = _size; i-- > index;)
+				table[i + 1] = table[i];
+
+			table[index] = entry;
+
+			_size++;
+		}
+
 		void push_entries_front(T *entries, size_t count)
 		{
 			expand(count);
