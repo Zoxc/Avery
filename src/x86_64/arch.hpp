@@ -37,6 +37,8 @@ namespace Arch
 	
 	void register_interrupt_handler(uint8_t index, interrupt_handler_t handler);
 
+	void write_gs_base(ptr_t base);
+
 	size_t read_msr(uint32_t reg);
 	void write_msr(uint32_t reg, size_t value);
 

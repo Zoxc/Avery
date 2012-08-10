@@ -23,7 +23,7 @@ end
 def bitcode_link(build, object, bitcode, bitcodes, options)
 	build.process object, *bitcodes do
 		build.execute 'llvm-link', *bitcodes, "-o=#{bitcode}"
-		build.execute 'llc', bitcode, '-filetype=obj', *options, '-relocation-model=static', '-mattr=-sse,-sse2,-mmx', '-O2', '-o', object
+		build.execute 'llc', bitcode, '-filetype=obj', *options, '-relocation-model=static', '-disable-fp-elim', '-mattr=-sse,-sse2,-mmx', '-O2', '-o', object
 	end
 end
 
@@ -97,7 +97,7 @@ build_kernel = proc do
 				when '.S'
 					assemble(build, source, objects)
 				when '.cpp', '.c'
-					options = ['-target', 'x86_64-generic-generic']
+					options = ['-target', 'x86_64-generic-generic', '-g']
 					
 					bootstrap = multiboot_bootstrap_files.include? source
 					
@@ -107,7 +107,7 @@ build_kernel = proc do
 					
 					build.cpp(source)
 					build.process bitcode, source.path do
-						build.execute 'clang', *options, '-std=gnu++11', '-emit-llvm', '-c', '-ffreestanding', '-Wall', '-Wextra', '-fno-rtti', '-fno-exceptions', '-fno-unwind-tables', '-fno-inline', source.path, '-o', bitcode
+						build.execute 'clang', *options, '-std=gnu++11', '-emit-llvm', '-c', '-fno-omit-frame-pointer', '-ffreestanding', '-Wall', '-Wextra', '-fno-rtti', '-fno-exceptions', '-fno-unwind-tables', '-fno-inline', source.path, '-o', bitcode
 					end
 					
 					if bootstrap

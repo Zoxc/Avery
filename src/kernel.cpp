@@ -25,7 +25,7 @@ void kernel()
 
 	Arch::enable_interrupts();
 
-	Init::load_modules();
+	//Init::load_modules();
 
 	while(true)
 		Arch::halt();

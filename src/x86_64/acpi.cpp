@@ -13,7 +13,7 @@ namespace ACPI
 	{
 		assert(count < CPU::max_cpus, "Too many CPUs in ACPI");
 
-		CPUInfo *info = &cpus[count];
+		CPUInfo *info = &cpus[count++];
 
 		info->acpi_id = acpi_id;
 		info->apic_id = apic_id;

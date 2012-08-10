@@ -31,6 +31,7 @@ namespace Memory
 			}
 		};
 
+		addr_t allocate_dirty_page();
 		addr_t allocate_page();
 		void free_page(addr_t page);
 

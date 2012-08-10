@@ -2,6 +2,7 @@
 #include "../common.hpp"
 #include "../util/vector.hpp"
 #include "arch.hpp"
+#include "cpu.hpp"
 
 namespace Memory
 {
@@ -64,6 +65,8 @@ namespace Memory
 	const ptr_t mapped_pml2ts = kernel_location - ptl2_size;
 	const ptr_t mapped_pml3ts = kernel_location + ptl1_size * 511;
 
+	void clear_physical_page(addr_t page);
+
 	void protect(VirtualPage *address, size_t pages, size_t flags);
 	void map(VirtualPage *address, size_t pages, size_t flags = rw_data_flags, AddressSpace *storage = 0);
 	void unmap(VirtualPage *address, size_t pages);
@@ -101,9 +104,9 @@ namespace Memory
 
 	const ptr_t physical_allocator_memory = kernel_location + ptl2_size;
 	const ptr_t framebuffer_start = physical_allocator_memory + ptl1_size;
-	const ptr_t low_memory_start = framebuffer_start + ptl1_size;
+	const ptr_t cpu_local_start = framebuffer_start + ptl1_size;
 
-	const ptr_t allocator_start = low_memory_start + ptl1_size;
+	const ptr_t allocator_start = cpu_local_start + CPU::max_cpus * CPU::local_page_count * page_size;
 	const ptr_t allocator_end = physical_allocator_memory + ptl2_size - page_size; // Subtract page_size to avoid overflow
 	
 	const ptr_t user_start = page_size;

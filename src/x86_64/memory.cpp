@@ -43,11 +43,11 @@ namespace Memory
 		return (ptr_t)entry & present_bit;
 	}
 
-	void ensure_table_entry(table_t *table, size_t index, AddressSpace *storage)
+	void ensure_table_entry(table_t *table, size_t index, table_t *lower, AddressSpace *storage)
 	{
 		if(!page_table_entry_present((*table)[index]))
 		{
-			addr_t page = Physical::allocate_page();
+			addr_t page = Physical::allocate_dirty_page();
 			addr_t flags = present_bit | write_bit;
 
 			if(storage)
@@ -57,6 +57,11 @@ namespace Memory
 			}
 
 			(*table)[index] = page_table_entry(page, flags);
+
+			__sync_synchronize();
+
+			for(size_t i = 0; i < table_entries; ++i)
+				(*lower)[i] = 0;
 		}
 	}
 
@@ -102,25 +107,35 @@ namespace Memory
 
 	page_table_entry_t *ensure_page_entry(VirtualPage *pointer, AddressSpace *storage)
 	{
-		ptr_t phy_ptr;
+		page_table_entry_t *result;
 
 		decode_address(pointer, [&](size_t ptl4_index, size_t ptl3_index, size_t ptl2_index, size_t ptl1_index) {
-			ensure_table_entry(&ptl4_static, ptl4_index, storage);
-
 			auto ptl3 = (table_t *)(mapped_pml3ts + ptl4_index * page_size);
 
-			ensure_table_entry(ptl3, ptl3_index, storage);
+			ensure_table_entry(&ptl4_static, ptl4_index, ptl3, storage);
 
 			auto ptl2 = (table_t *)(mapped_pml2ts + ptl4_index * ptl1_size + ptl3_index * page_size);
 
-			ensure_table_entry(ptl2, ptl2_index, storage);
+			ensure_table_entry(ptl3, ptl3_index, ptl2, storage);
 
-			phy_ptr = mapped_pml1ts + ptl4_index * ptl2_size + ptl3_index * ptl1_size + ptl2_index * page_size + ptl1_index * sizeof(size_t);
+			auto ptl1 = (table_t *)(mapped_pml1ts + ptl4_index * ptl2_size + ptl3_index * ptl1_size + ptl2_index * page_size);
+
+			ensure_table_entry(ptl2, ptl2_index, ptl1, storage);
+
+			result = &(*ptl1)[ptl1_index];
 		});
 
-		return (page_table_entry_t *)phy_ptr;
+		return result;
 	}
 
+	void clear_physical_page(addr_t page)
+	{
+		auto temp = CPU::current->local_pages;
+
+		*get_page_entry(temp) = page_table_entry(page, rw_data_flags);
+		invalidate_page(temp);
+		memset(temp, 0, Arch::page_size);
+	}
 };
 
 addr_t Memory::physical_page(VirtualPage *virtual_address)
@@ -148,6 +163,8 @@ void Memory::map(VirtualPage *address, size_t pages, size_t flags, AddressSpace 
 {
 	for(VirtualPage *end = address + pages; address < end; ++address)
 		*ensure_page_entry(address, storage) = page_table_entry(Physical::allocate_page(), flags);
+
+	__sync_synchronize();
 }
 
 void Memory::unmap(VirtualPage *address, size_t pages)
@@ -170,6 +187,8 @@ void Memory::map_address(VirtualPage *address, size_t pages, addr_t physical, si
 {
 	for(VirtualPage *end = address + pages; address < end; ++address, physical += page_size)
 		*ensure_page_entry(address, storage) = page_table_entry(physical, flags);
+
+	__sync_synchronize();
 }
 
 void Memory::unmap_address(VirtualPage *address, size_t pages)
@@ -252,4 +271,6 @@ void Memory::Initial::initialize()
 	load_pml4(physical_page((VirtualPage *)&ptl4_static));
 
 	console.new_buffer((void *)framebuffer_start);
+
+	CPU::bsp->map_local_page_tables();
 }

@@ -62,7 +62,7 @@ void Memory::Physical::free_page(addr_t page)
 	abort("Memory doesn't belong to any of the holes");
 }
 
-addr_t Memory::Physical::allocate_page()
+addr_t Memory::Physical::allocate_dirty_page()
 {
 	for(size_t i = 0; i < hole_count; ++i)
 	{
@@ -84,6 +84,15 @@ addr_t Memory::Physical::allocate_page()
 	}
 
 	panic("Out of physical memory");
+}
+
+addr_t Memory::Physical::allocate_page()
+{
+	addr_t result = allocate_dirty_page();
+
+	clear_physical_page(result);
+
+	return result;
 }
 
 void Memory::Physical::initialize()

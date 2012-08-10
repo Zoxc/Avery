@@ -11,16 +11,42 @@ size_t CPU::count = 1;
 CPU CPU::cpus[max_cpus];
 CPU *CPU::bsp = CPU::cpus;
 
+void CPU::initialize_basic()
+{
+	bsp->setup(0);
+	bsp->setup_gs();
+}
+
+void CPU::setup_gs()
+{
+	const size_t gs_base = 0xC0000101;
+
+	Arch::write_msr(gs_base, (ptr_t)this);
+}
+
+void CPU::map_local_page_tables()
+{
+	for(auto page = local_pages; page < local_pages + local_page_count; ++page)
+		Memory::ensure_page_entry(page, 0);
+}
+
+void CPU::setup(size_t i)
+{
+	index = i;
+	self = this;
+	local_pages = (Memory::VirtualPage *)(Memory::cpu_local_start + index * Arch::page_size * CPU::local_page_count);
+}
+
 CPU *CPU::allocate(size_t acpi_id, size_t apic_id)
 {
-	for(size_t i = 0; i < count; )
 	assert(count < max_cpus, "Too many CPUs");
 
 	CPU *result = &cpus[count];
 
-	result->index = count++;
 	result->acpi_id = acpi_id;
 	result->apic_id = apic_id;
+
+	result->setup(count++);
 
 	return result;
 }
@@ -106,15 +132,27 @@ void CPU::initialize()
 
 	volatile APBootstrapInfo *info = setup_ap_bootstrap();
 
-	CPU::bsp->apic_id = APIC::local_id();
+	bsp->apic_id = APIC::local_id();
+
+	bool found_bsp = false;
 
 	for(size_t i = 0; i < ACPI::CPUInfo::count; ++i)
 	{
-		if(ACPI::CPUInfo::cpus[i].apic_id != CPU::bsp->apic_id)
+		if(ACPI::CPUInfo::cpus[i].apic_id != bsp->apic_id)
 			CPU::allocate(ACPI::CPUInfo::cpus[i].acpi_id, ACPI::CPUInfo::cpus[i].apic_id);
+		else
+		{
+			found_bsp = true;
+			bsp->acpi_id = ACPI::CPUInfo::cpus[i].acpi_id;
+		}
 	}
 
-	assert(bsp != 0, "Didn't find the bootstrap processor");
+	assert(found_bsp, "Didn't find the bootstrap processor");
+
+	bsp->started = true;
+
+	if(CPU::count == 1)
+		return;
 
 	// Wake up other CPUs
 
@@ -141,8 +179,6 @@ void CPU::initialize()
 		APIC::ipi(cpus[i].apic_id, APIC::Init, 0);
 	}
 
-	bsp->started = true;
-
 	APIC::simple_oneshot(1300000);
 
 	send_startup();
@@ -165,6 +201,9 @@ extern "C" void ap_entry(CPU *cpu)
 	Arch::load_idt();
 
 	cpu->started = true;
+
+	cpu->setup_gs();
+	cpu->map_local_page_tables();
 
 	while(true)
 		Arch::halt();
