@@ -67,3 +67,6 @@ src/init/init.cpp
 src/x86_64/init/init.hpp
 src/x86_64/init/init.cpp
 src/x86_64/init/elf.h
+src/thread.hpp
+src/thread.cpp
+src/x86_64/user.S

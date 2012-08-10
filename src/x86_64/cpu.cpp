@@ -2,16 +2,18 @@
 #include "apic.hpp"
 #include "gdt.hpp"
 #include "idt.hpp"
+#include "acpi.hpp"
 #include "../memory.hpp"
 #include "../physical_mem.hpp"
 #include "../lib.hpp"
 
-size_t CPU::count;
+size_t CPU::count = 1;
 CPU CPU::cpus[max_cpus];
-CPU *CPU::bsp;
+CPU *CPU::bsp = CPU::cpus;
 
 CPU *CPU::allocate(size_t acpi_id, size_t apic_id)
 {
+	for(size_t i = 0; i < count; )
 	assert(count < max_cpus, "Too many CPUs");
 
 	CPU *result = &cpus[count];
@@ -104,37 +106,33 @@ void CPU::initialize()
 
 	volatile APBootstrapInfo *info = setup_ap_bootstrap();
 
-	size_t bsp_id = APIC::local_id();
+	CPU::bsp->apic_id = APIC::local_id();
 
-	for(size_t i = 0; i < count; ++i)
+	for(size_t i = 0; i < ACPI::CPUInfo::count; ++i)
 	{
-		if(cpus[i].apic_id == bsp_id)
-		{
-			bsp = &cpus[i];
-			break;
-		}
+		if(ACPI::CPUInfo::cpus[i].apic_id != CPU::bsp->apic_id)
+			CPU::allocate(ACPI::CPUInfo::cpus[i].acpi_id, ACPI::CPUInfo::cpus[i].apic_id);
 	}
 
 	assert(bsp != 0, "Didn't find the bootstrap processor");
-
-	bsp->started = true;
 
 	// Wake up other CPUs
 
 	for(size_t i = 0; i < count; ++i)
 	{
-		if(&cpus[i] == bsp)
-			continue;
-
 		// Allocate a stack
 
 		const size_t stack_pages = 5;
 
 		auto stack = Memory::allocate_block(Memory::Block::Stack, stack_pages + 1);
 
-		cpus[i].started = false;
 		cpus[i].stack = stack;
 		cpus[i].stack_end = stack->base + stack->pages;
+
+		if(&cpus[i] == bsp)
+			continue;
+
+		cpus[i].started = false;
 
 		Memory::map(stack->base + 1, stack_pages);
 
@@ -142,6 +140,8 @@ void CPU::initialize()
 
 		APIC::ipi(cpus[i].apic_id, APIC::Init, 0);
 	}
+
+	bsp->started = true;
 
 	APIC::simple_oneshot(1300000);
 
@@ -161,7 +161,7 @@ void CPU::initialize()
 
 extern "C" void ap_entry(CPU *cpu)
 {
-	Arch::initialize_gdt();
+	Arch::initialize_gdt(cpu);
 	Arch::load_idt();
 
 	cpu->started = true;

@@ -9,7 +9,7 @@
 
 void Arch::initialize_basic()
 {
-	initialize_gdt();
+	initialize_gdt(CPU::bsp);
 	initialize_idt();
 }
 

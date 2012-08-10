@@ -12,6 +12,22 @@ namespace Arch
 		uint64_t interrupt_index, error_code;    // Interrupt number and error code (if applicable)
 		uint64_t rip, cs, rflags, prev_rsp, ss; // Pushed by the processor automatically.
 	} __attribute__((packed));
+
+	struct Registers
+	{
+		uint64_t r15, r14, r13, r12, r10, r9, r8, rdi, rsi, rdx, rcx, rbp, rbx, rax;
+		uint64_t rip, cs, rflags, rsp, ss;
+
+		void set_ip(ptr_t ip)
+		{
+			rip = ip;
+		}
+
+		void set_stack(ptr_t stack)
+		{
+			rsp = stack;
+		}
+	};
 	
 	typedef void (*interrupt_handler_t)(const InterruptInfo &);
 	

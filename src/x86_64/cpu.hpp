@@ -1,6 +1,12 @@
 #pragma once
 #include "arch.hpp"
-#include "../memory.hpp"
+#include "gdt.hpp"
+
+namespace Memory
+{
+	struct Block;
+	struct VirtualPage;
+};
 
 struct CPU
 {
@@ -11,6 +17,7 @@ struct CPU
 	bool started;
 	Memory::Block *stack;
 	void *stack_end;
+	Arch::TaskStateSegment tss;
 
 	static const size_t max_cpus = 32;
 	static size_t count;
@@ -20,4 +27,3 @@ struct CPU
 	static CPU *allocate(size_t acpi_id, size_t apic_id);
 	static void initialize();
 };
-

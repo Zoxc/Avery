@@ -6,6 +6,19 @@
 
 namespace ACPI
 {
+	size_t CPUInfo::count = 0;
+	CPUInfo CPUInfo::cpus[CPU::max_cpus];
+
+	void CPUInfo::setup(size_t acpi_id, size_t apic_id)
+	{
+		assert(count < CPU::max_cpus, "Too many CPUs in ACPI");
+
+		CPUInfo *info = &cpus[count];
+
+		info->acpi_id = acpi_id;
+		info->apic_id = apic_id;
+	}
+
 	const uint64_t RSDP::signature_magic = *(uint64_t *)"RSD PTR ";
 	const uint32_t RSDT::signature_magic = *(uint32_t *)"RSDT";
 	const uint32_t MADT::signature_magic = *(uint32_t *)"APIC";
@@ -106,7 +119,7 @@ namespace ACPI
 					auto processor = (MADT::ProcessorLocalAPIC *)entry;
 
 					if(processor->flags & MADT::ProcessorLocalAPIC::flag_enabled)
-						CPU::allocate(processor->processor_id, processor->apic_id);
+						CPUInfo::setup(processor->processor_id, processor->apic_id);
 
 					break;
 				};

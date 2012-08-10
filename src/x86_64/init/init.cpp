@@ -1,8 +1,25 @@
 #include "../arch.hpp"
 #include "../../process.hpp"
+#include "../../thread.hpp"
 #include "elf.h"
 
-void Init::load_module(Process *process, const void *obj, size_t)
+void Init::enter_usermode(Thread *thread)
+{
+	thread->registers.ss = 0x23;
+	thread->registers.cs = 0x1b;
+
+	asm volatile ("pushfq\n pop %%rax" : "=a"(thread->registers.rflags));
+
+	console.s("entering usermode rip: ").x(thread->registers.rip)
+	.s(" - rflags: ").x(thread->registers.rflags)
+	.s(" - cs: ").x(thread->registers.cs)
+	.s(" - ss: ").x(thread->registers.ss)
+	.s(" - rsp: ").x(thread->registers.rsp).endl();
+
+	asm volatile ("cli\n mov %0, %%rsp\n iretq" :: "r"(&thread->registers.rip));
+}
+
+ptr_t Init::load_module(Process *process, const void *obj, size_t)
 {
 	uint8_t *buffer = (uint8_t *)obj;
 
@@ -28,7 +45,7 @@ void Init::load_module(Process *process, const void *obj, size_t)
 
 		User::Block *segment = process->allocator.allocate_at((Memory::VirtualPage *)start, User::Block::Generic, aligned_pages);
 
-		size_t flags = Memory::present_bit;
+		size_t flags = Memory::present_bit | Memory::usermode_bit;
 
 		if(program_header->p_flags & PF_W)
 			flags |= Memory::write_bit;
@@ -45,6 +62,8 @@ void Init::load_module(Process *process, const void *obj, size_t)
 
 		Memory::protect(segment->base, aligned_pages, flags);
 
-		console.s("Loaded section to ").x(segment->base).s(" - ").x(segment->base + segment->pages).endl();
+		console.s("Loaded section to ").x(segment->base).s(" - ").x(segment->base + segment->pages).s(" - flags ").x(flags).endl();
 	}
+
+	return header->e_entry;
 }

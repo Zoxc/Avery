@@ -48,11 +48,15 @@ namespace Memory
 		if(!page_table_entry_present((*table)[index]))
 		{
 			addr_t page = Physical::allocate_page();
+			addr_t flags = present_bit | write_bit;
 
 			if(storage)
+			{
 				storage->pages.push(page);
+				flags |= usermode_bit;
+			}
 
-			(*table)[index] = page_table_entry(page, present_bit | write_bit);
+			(*table)[index] = page_table_entry(page, flags);
 		}
 	}
 

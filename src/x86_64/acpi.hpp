@@ -1,8 +1,20 @@
 #pragma once
 #include "arch.hpp"
+#include "cpu.hpp"
 
 namespace ACPI
 {
+	struct CPUInfo
+	{
+		size_t acpi_id;
+		size_t apic_id;
+
+		static size_t count;
+		static CPUInfo cpus[CPU::max_cpus];
+
+		static void setup(size_t acpi_id, size_t apic_id);
+	};
+
 	struct RSDP
 	{
 		static const uint64_t signature_magic;
