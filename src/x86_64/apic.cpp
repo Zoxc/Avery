@@ -112,7 +112,9 @@ namespace APIC
 
 		Arch::register_interrupt_handler(32, simple_oneshot_wake);
 		oneshot_done = false;
+		reg(reg_timer_div) = 3;
 		reg(reg_timer_init) = ticks;
+		reg(reg_lvt_timer) = 32;
 
 		Arch::enable_interrupts();
 
