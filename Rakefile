@@ -107,7 +107,7 @@ build_kernel = proc do
 					
 					build.cpp(source)
 					build.process bitcode, source.path do
-						build.execute 'clang', *options, '-std=gnu++11', '-emit-llvm', '-c', '-fno-omit-frame-pointer', '-ffreestanding', '-Wall', '-Wextra', '-fno-rtti', '-fno-exceptions', '-fno-unwind-tables', '-fno-inline', source.path, '-o', bitcode
+						build.execute 'clang', *options, '-std=gnu++11', '-emit-llvm', '-c', '-fno-omit-frame-pointer', '-mno-red-zone', '-ffreestanding', '-Wall', '-Wextra', '-fno-rtti', '-fno-exceptions', '-fno-unwind-tables', '-fno-inline', source.path, '-o', bitcode
 					end
 					
 					if bootstrap
