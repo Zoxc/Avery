@@ -66,6 +66,7 @@ namespace Memory
 	const ptr_t mapped_pml3ts = kernel_location + ptl1_size * 511;
 
 	void clear_physical_page(addr_t page);
+	void clear_lower();
 
 	void protect(VirtualPage *address, size_t pages, size_t flags);
 	void map(VirtualPage *address, size_t pages, size_t flags = rw_data_flags, AddressSpace *storage = 0);

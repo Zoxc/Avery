@@ -24,6 +24,8 @@ void Arch::initialize_memory()
 
 void Arch::initialize()
 {
+	CPU::bsp->map_local_page_tables();
+
 	ACPI::initialize();
 	APIC::initialize();
 	CPU::initialize();

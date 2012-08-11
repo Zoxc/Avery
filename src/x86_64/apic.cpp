@@ -45,12 +45,6 @@ namespace APIC
 		reg(reg_eoi) = 0;
 	}
 
-	void timer(const Arch::InterruptInfo &)
-	{
-		console.s("Timer working!").endl();
-		reg(reg_eoi) = 0;
-	}
-
 	void ipi(size_t target, MessageType type, size_t vector)
 	{
 		reg(reg_icrh) = target << 24;
@@ -101,12 +95,7 @@ namespace APIC
 
 		Arch::write_msr(base_register, base | msr_enable_bit);
 
-		reg(reg_lvt_timer) = 32;
-		reg(reg_timer_div) = 3;
-		reg(reg_timer_init) = 1000000;
 		reg(reg_siv) = 0xFF | sw_enable;
-
-		Arch::register_interrupt_handler(32, timer);
 	}
 
 	volatile bool oneshot_done;

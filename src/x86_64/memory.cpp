@@ -14,7 +14,6 @@ namespace Memory
 	table_t ptl1_kernel MEMORY_PAGE_ALIGN;
 	table_t ptl1_physical MEMORY_PAGE_ALIGN;
 	table_t ptl1_frame MEMORY_PAGE_ALIGN;
-	table_t ptl1_low_memory MEMORY_PAGE_ALIGN;
 	
 	namespace Initial
 	{
@@ -36,6 +35,12 @@ namespace Memory
 		{
 			return page_table_entry(physical_page((VirtualPage *)table), present_bit | write_bit);
 		}
+	}
+
+	void clear_lower()
+	{
+		ptl4_static[0] = 0;
+		asm volatile ("" ::: "memory");
 	}
 
 	void load_pml4(addr_t pml4t)
@@ -226,11 +231,6 @@ void Memory::Initial::initialize()
 
 	ptl2_dynamic[0] = table_entry_from_data(&ptl1_physical);
 	ptl2_dynamic[1] = table_entry_from_data(&ptl1_frame);
-	ptl2_dynamic[2] = table_entry_from_data(&ptl1_low_memory);
-
-	// Map the low memory area
-
-	map_page_table(ptl1_low_memory, 0, 0x100000, 0, nx_bit);
 
 	// Map the physical memory allocator
 
@@ -282,6 +282,4 @@ void Memory::Initial::initialize()
 	load_pml4(physical_page((VirtualPage *)&ptl4_static));
 
 	console.new_buffer((void *)framebuffer_start);
-
-	CPU::bsp->map_local_page_tables();
 }

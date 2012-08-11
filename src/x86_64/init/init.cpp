@@ -41,7 +41,7 @@ ptr_t Init::load_module(Process *process, const void *obj, size_t)
 		Memory::assert_page_aligned(start);
 
 		ptr_t aligned_end = align_up(end, Arch::page_size);
-		ptr_t aligned_pages = aligned_end - start;
+		ptr_t aligned_pages = (aligned_end - start) / Arch::page_size;
 
 		User::Block *segment = process->allocator.allocate_at((Memory::VirtualPage *)start, User::Block::Generic, aligned_pages);
 
@@ -57,7 +57,6 @@ ptr_t Init::load_module(Process *process, const void *obj, size_t)
 
 		assert(program_header->p_memsz >= program_header->p_filesz, "Module file size is larger than memory size");
 
-		memset((uint8_t *)segment->base + program_header->p_filesz, 0, program_header->p_memsz - program_header->p_filesz);
 		memcpy(segment->base, buffer + program_header->p_offset, program_header->p_filesz);
 
 		Memory::protect(segment->base, aligned_pages, flags);

@@ -152,7 +152,7 @@ void CPU::initialize()
 	bsp->started = true;
 
 	if(CPU::count == 1)
-		return;
+		goto started;
 
 	// Wake up other CPUs
 
@@ -192,7 +192,10 @@ void CPU::initialize()
 	while(!cpus_started())
 		Arch::pause();
 
+started:
 	console.s("All CPUs have started").endl();
+
+	Memory::clear_lower();
 }
 
 extern "C" void ap_entry(CPU *cpu)
