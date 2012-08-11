@@ -89,8 +89,9 @@ isr_stub:
 	push %r10
 	push %r11
 
-    mov %ds, %ax               # Lower 16-bits of eax = ds.
-    push %rax                 # save the data segment descriptor
+	mov %ds, %ax               # Lower 16-bits of eax = ds.
+	movzx %ax, %rax
+	push %rax                 # save the data segment descriptor
 
     mov $0x10, %ax
 	mov %ax, %ds
@@ -128,6 +129,7 @@ irq_stub:
 	push %r11
 
     mov %ds, %ax               # Lower 16-bits of eax = ds.
+	movzx %ax, %rax
     push %rax                 # save the data segment descriptor
 
     mov $0x10, %ax
