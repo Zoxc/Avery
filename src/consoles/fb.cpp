@@ -79,6 +79,8 @@ void FramebufferConsoleBackend::scroll()
 
 void FramebufferConsoleBackend::clear()
 {
+	DisplayConsoleBackend::clear();
+
 	clear_frame(left, top, width, height);
 }
 

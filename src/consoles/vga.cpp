@@ -38,6 +38,8 @@ void VGAConsoleBackend::scroll()
 
 void VGAConsoleBackend::clear()
 {
+	DisplayConsoleBackend::clear();
+
 	for(auto pos = fb; pos < fb + char_count; pos++)
 		*pos = ' ' | (bg_color << 8);
 }
