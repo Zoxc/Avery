@@ -13,7 +13,7 @@ namespace Memory
 	};
 
 	struct PageTableEntry;
-	typedef PageTableEntry *page_table_entry_t;
+	typedef volatile PageTableEntry *page_table_entry_t;
 
 	const size_t table_entries = 512;
 
@@ -30,8 +30,8 @@ namespace Memory
 
 	struct VirtualPage
 	{
-		uint8_t data[Arch::page_size];
-	};
+		volatile char data[Arch::page_size];
+	} __attribute__((may_alias)) __attribute__((packed));
 
 	verify_size(VirtualPage, Arch::page_size);
 
@@ -113,14 +113,4 @@ namespace Memory
 	const ptr_t user_end = lower_half_end;
 
 	VirtualPage *simple_allocate(size_t pages = 1);
-
-	static inline void load_pml4(addr_t pml4t)
-	{
-		asm volatile ("mov %%rax, %%cr3" :: "a"(pml4t) : "memory");
-	}
-
-	static inline void invalidate_page(VirtualPage *address)
-	{
-		asm volatile ("invlpg (%%rdi)" :: "D"(address) : "memory");
-	}
 };

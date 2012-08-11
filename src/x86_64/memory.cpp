@@ -38,6 +38,16 @@ namespace Memory
 		}
 	}
 
+	void load_pml4(addr_t pml4t)
+	{
+		asm volatile ("mov %%rax, %%cr3" :: "a"(pml4t) : "memory");
+	}
+
+	void invalidate_page(VirtualPage *address)
+	{
+		asm volatile ("invlpg (%%rdi)" : "+m"(*(volatile VirtualPage *)address) : "D"(address));
+	}
+
 	bool page_table_entry_present(page_table_entry_t entry)
 	{
 		return (ptr_t)entry & present_bit;
@@ -57,8 +67,6 @@ namespace Memory
 			}
 
 			(*table)[index] = page_table_entry(page, flags);
-
-			__sync_synchronize();
 
 			for(size_t i = 0; i < table_entries; ++i)
 				(*lower)[i] = 0;
@@ -128,6 +136,13 @@ namespace Memory
 		return result;
 	}
 
+	void set_page_entry(VirtualPage *address, AddressSpace *storage, page_table_entry_t entry)
+	{
+		*ensure_page_entry(address, storage) = entry;
+
+		asm volatile ("" : "+m"(*(volatile VirtualPage *)address));
+	}
+
 	void clear_physical_page(addr_t page)
 	{
 		auto temp = CPU::current->local_pages;
@@ -162,9 +177,7 @@ void Memory::protect(VirtualPage *address, size_t pages, size_t flags)
 void Memory::map(VirtualPage *address, size_t pages, size_t flags, AddressSpace *storage)
 {
 	for(VirtualPage *end = address + pages; address < end; ++address)
-		*ensure_page_entry(address, storage) = page_table_entry(Physical::allocate_page(), flags);
-
-	__sync_synchronize();
+		set_page_entry(address, storage, page_table_entry(Physical::allocate_page(), flags));
 }
 
 void Memory::unmap(VirtualPage *address, size_t pages)
@@ -186,9 +199,7 @@ void Memory::unmap(VirtualPage *address, size_t pages)
 void Memory::map_address(VirtualPage *address, size_t pages, addr_t physical, size_t flags, AddressSpace *storage)
 {
 	for(VirtualPage *end = address + pages; address < end; ++address, physical += page_size)
-		*ensure_page_entry(address, storage) = page_table_entry(physical, flags);
-
-	__sync_synchronize();
+		set_page_entry(address, storage, page_table_entry(physical, flags));
 }
 
 void Memory::unmap_address(VirtualPage *address, size_t pages)
