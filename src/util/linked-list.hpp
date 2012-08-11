@@ -71,6 +71,8 @@ public:
 		}
 		else
 		{
+			node->*prev = 0;
+
 			first = node;
 			last = node;
 		}
