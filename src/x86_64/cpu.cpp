@@ -1,7 +1,7 @@
 #include "cpu.hpp"
 #include "apic.hpp"
 #include "gdt.hpp"
-#include "idt.hpp"
+#include "interrupts.hpp"
 #include "acpi.hpp"
 #include "../memory.hpp"
 #include "../physical_mem.hpp"
@@ -201,7 +201,7 @@ started:
 extern "C" void ap_entry(CPU *cpu)
 {
 	Arch::initialize_gdt(cpu);
-	Arch::load_idt();
+	Interrupts::load_idt();
 
 	cpu->started = true;
 

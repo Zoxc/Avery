@@ -5,7 +5,7 @@
 #include "acpi.hpp"
 #include "cpu.hpp"
 #include "gdt.hpp"
-#include "idt.hpp"
+#include "interrupts.hpp"
 
 void Arch::initialize_basic()
 {
@@ -14,7 +14,7 @@ void Arch::initialize_basic()
 
 	initialize_gdt(CPU::bsp);
 	CPU::initialize_basic();
-	initialize_idt();
+	Interrupts::initialize_idt();
 }
 
 void Arch::initialize_memory()
@@ -73,16 +73,6 @@ void Arch::pause()
 	asm volatile ("pause");
 }
 
-void Arch::enable_interrupts()
-{
-	asm("sti");
-}
-
-void Arch::disable_interrupts()
-{
-	asm("cli");
-}
-
 void Arch::halt()
 {
 	asm("hlt");
@@ -90,7 +80,7 @@ void Arch::halt()
 
 void Arch::panic()
 {
-	disable_interrupts();
+	Interrupts::disable();
 
 	while(true)
 		halt();

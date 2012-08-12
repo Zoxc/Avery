@@ -23,7 +23,7 @@ void kernel()
 
 	Arch::initialize();
 
-	Arch::enable_interrupts();
+	Interrupts::enable();
 
 	Init::load_modules();
 

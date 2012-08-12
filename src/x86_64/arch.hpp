@@ -5,14 +5,6 @@
 
 namespace Arch
 {
-	struct InterruptInfo
-	{
-		uint64_t ds;
-		uint16_t padding[3];
-		uint64_t r11, r10, r9, r8, rdi, rcx, rax, rsi, rdx;
-		uint64_t rip, cs, rflags, rsp, ss;
-	} __attribute__((packed));
-
 	struct Registers
 	{
 		uint64_t r15, r14, r13, r12, r10, r9, r8, rdi, rsi, rdx, rcx, rbp, rbx, rax;
@@ -28,14 +20,8 @@ namespace Arch
 			rsp = stack;
 		}
 	};
-	
-	typedef void (*interrupt_handler_t)(const InterruptInfo &info, uint8_t index, size_t error_code);
-	
+
 	const size_t page_size = 0x1000;
-
-	const size_t interrupt_handler_count = 256;
-
-	void register_interrupt_handler(uint8_t index, interrupt_handler_t handler);
 
 	void write_gs_base(ptr_t base);
 
@@ -47,9 +33,6 @@ namespace Arch
 	uint16_t inw(uint16_t port);
 
 	void pause();
-
-	void enable_interrupts();
-	void disable_interrupts();
 
 	void halt();
 

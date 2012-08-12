@@ -1,8 +1,8 @@
-#include "idt.hpp"
+#include "interrupts.hpp"
 #include "apic.hpp"
 #include "../console.hpp"
 
-namespace Arch
+namespace Interrupts
 {
 	struct InterruptGate
 	{
@@ -26,7 +26,7 @@ namespace Arch
 	
 	struct IDT
 	{
-		InterruptGate gates[interrupt_handler_count];
+		InterruptGate gates[handler_count];
 	} __attribute__((packed));
 
 	struct IDTPointer
@@ -38,7 +38,7 @@ namespace Arch
 	IDT idt;
 	IDTPointer idt_ptr;
 
-	interrupt_handler_t interrupt_handlers[interrupt_handler_count] asm("interrupt_handlers");
+	handler_t handlers[handler_count] asm("interrupt_handlers");
 
 	typedef void(*isr_stub_t)();
 
@@ -106,14 +106,14 @@ namespace Arch
 		}
 	};
 
-	template<> struct IsrSetup<interrupt_handler_count - 1>
+	template<> struct IsrSetup<handler_count - 1>
 	{
 		static void setup()
 		{
 		}
 	};
 
-	void default_handler(const InterruptInfo &info, uint8_t index, size_t error_code)
+	void default_handler(const Info &info, uint8_t index, size_t error_code)
 	{
 		uint64_t cr2;
 
@@ -139,64 +139,74 @@ namespace Arch
 			.s("rflags: ").x(info.rflags).a()
 		.endl();
 	}
+
+	void enable()
+	{
+		asm("sti");
+	}
+
+	void disable()
+	{
+		asm("cli");
+	}
+
+	extern "C" void spurious_irq();
+
+	void setup_pics()
+	{
+		const size_t master_command = 0x20;
+		const size_t master_data = 0x21;
+		const size_t slave_command = 0xA0;
+		const size_t slave_data = 0xA1;
+
+		const size_t pic_init = 0x11;
+
+		const size_t pic_mask_all = 0xFF;
+
+		// Remap the PICs IRQ tables
+
+		Arch::outb(master_command, pic_init);
+		Arch::outb(master_data, 0xF8);
+		Arch::outb(master_data, 0x04);
+		Arch::outb(master_data, 0x01);
+		Arch::outb(master_data, 0x0);
+
+		Arch::outb(slave_command, pic_init);
+		Arch::outb(slave_data, 0xF8);
+		Arch::outb(slave_data, 0x02);
+		Arch::outb(slave_data, 0x01);
+		Arch::outb(slave_data, 0x0);
+
+		// Disable the PICs
+
+		Arch::outb(master_data, pic_mask_all);
+		Arch::outb(slave_data, pic_mask_all);
+	}
+
+	void initialize_idt()
+	{
+		idt_ptr.limit = sizeof(idt) - 1;
+		idt_ptr.base = &idt;
+
+		setup_pics();
+
+		IsrSetup<0>::setup();
+
+		set_gate(0xFF, spurious_irq);
+
+		for(size_t i = 0; i < handler_count; ++i)
+			handlers[i] = &default_handler;
+
+		load_idt();
+	}
+
+	void load_idt()
+	{
+		asm volatile ("lidt %0" :: "m"(idt_ptr));
+	}
+
+	void register_handler(uint8_t index, handler_t handler)
+	{
+		handlers[index] = handler;
+	}
 };
-
-void Arch::register_interrupt_handler(uint8_t index, interrupt_handler_t handler)
-{
-	interrupt_handlers[index] = handler;
-}
-
-extern "C" void spurious_irq();
-
-void setup_pics()
-{
-	const size_t master_command = 0x20;
-	const size_t master_data = 0x21;
-	const size_t slave_command = 0xA0;
-	const size_t slave_data = 0xA1;
-
-	const size_t pic_init = 0x11;
-
-	const size_t pic_mask_all = 0xFF;
-
-	// Remap the PICs IRQ tables
-
-	Arch::outb(master_command, pic_init);
-	Arch::outb(master_data, 0xF8);
-	Arch::outb(master_data, 0x04);
-	Arch::outb(master_data, 0x01);
-	Arch::outb(master_data, 0x0);
-
-	Arch::outb(slave_command, pic_init);
-	Arch::outb(slave_data, 0xF8);
-	Arch::outb(slave_data, 0x02);
-	Arch::outb(slave_data, 0x01);
-	Arch::outb(slave_data, 0x0);
-
-	// Disable the PICs
-
-	Arch::outb(master_data, pic_mask_all);
-	Arch::outb(slave_data, pic_mask_all);
-}
-
-void Arch::initialize_idt()
-{
-	idt_ptr.limit = sizeof(idt) - 1;
-	idt_ptr.base = &idt;
-
-	setup_pics();
-
-	IsrSetup<0>::setup();
-
-	set_gate(0xFF, spurious_irq);
-
-	for(size_t i = 0; i < interrupt_handler_count; ++i)
-		interrupt_handlers[i] = &default_handler;
-
-	load_idt();
-}
-
-void Arch::load_idt()
-{
-	asm volatile ("lidt %0" :: "m"(idt_ptr));
-}
