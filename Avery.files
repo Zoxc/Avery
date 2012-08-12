@@ -1,7 +1,6 @@
 src/x86_64/arch.cpp
 src/x86_64/arch.hpp
 src/x86_64/gdt.cpp
-src/x86_64/idt.cpp
 src/x86_64/memory.cpp
 src/x86_64/memory.hpp
 src/common.hpp
@@ -50,7 +49,6 @@ src/x86_64/cpu.hpp
 src/x86_64/cpu.cpp
 src/x86_64/cpu.S
 src/x86_64/gdt.hpp
-src/x86_64/idt.hpp
 src/x86_64/io-apic.hpp
 src/x86_64/io-apic.cpp
 src/util/vector.hpp
@@ -70,3 +68,5 @@ src/x86_64/init/elf.h
 src/thread.hpp
 src/thread.cpp
 src/x86_64/user.S
+src/x86_64/interrupts.hpp
+src/x86_64/interrupts.cpp
