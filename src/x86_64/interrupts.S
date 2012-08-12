@@ -1,156 +1,42 @@
-# Macro for interrupt vectors without an error code
-#define no_error_code(num) \
-  .global isr ## num ;\
-  isr ## num: ;\
-    cli ;\
-    pushq $0 ;\
-    pushq $ ## num   ;\
-    jmp isr_stub
-	
-# Macro for interrupt vectors with an error code
-#define error_code(num) \
-  .global isr ## num ;\
-  isr ## num: ;\
-    cli ;\
-    pushq $ ## num   ;\
-    jmp isr_stub
-
-# Macro for IRQs
-#define irq(num) \
-  .global irq ## num ;\
-  irq ## num: ;\
-    cli ;\
-	pushq $0   ;\
-	pushq $ num + 32 ;\
-    jmp irq_stub
-
-no_error_code(0)
-no_error_code(1)
-no_error_code(2)
-no_error_code(3)
-no_error_code(4)
-no_error_code(5)
-no_error_code(6)
-no_error_code(7)
-error_code(8)
-no_error_code(9)
-error_code(10)
-error_code(11)
-error_code(12)
-error_code(13)
-error_code(14)
-no_error_code(15)
-no_error_code(16)
-no_error_code(17)
-no_error_code(18)
-no_error_code(19)
-no_error_code(20)
-no_error_code(21)
-no_error_code(22)
-no_error_code(23)
-no_error_code(24)
-no_error_code(25)
-no_error_code(26)
-no_error_code(27)
-no_error_code(28)
-no_error_code(29)
-no_error_code(30)
-no_error_code(31)
-irq(0)
-irq(1)
-irq(2)
-irq(3)
-irq(4)
-irq(5)
-irq(6)
-irq(7)
-irq(8)
-irq(9)
-irq(10)
-irq(11)
-irq(12)
-irq(13)
-irq(14)
-irq(15)
-
+.intel_syntax noprefix
 .global spurious_irq
 spurious_irq:
 	iretq
 
-isr_stub:
-	# Push all registers
-	push %rax
-	push %rcx
-	push %rdx
-	push %rsi
-	push %rdi
-	push %r8
-	push %r9
-	push %r10
-	push %r11
+.global interrupt_handlers
 
-	mov %ds, %ax               # Lower 16-bits of eax = ds.
-	movzx %ax, %rax
-	push %rax                 # save the data segment descriptor
+.global isr_handler
+isr_handler:
+	push rax
+	push rcx
+	push rdi
+	push r8
+	push r9
+	push r10
+	push r11
 
-    mov $0x10, %ax
-	mov %ax, %ds
+	mov ax, ds
+	push rax
+
+	mov ax, 0x10
+	mov ds, ax
 	
-	mov %rsp, %rdi
-    call isr_handler
+	mov rdi, rsp
+	lea rcx, interrupt_handlers
+	call [rcx + 8 * rsi]
 	
-    pop %rax        # reload the original data segment descriptor
-	mov %ax, %ds
-	
-	# Pop all registers
-	pop %r11
-	pop %r10
-	pop %r9
-	pop %r8
-	pop %rdi
-	pop %rsi
-	pop %rdx
-	pop %rcx
-	pop %rax
+	pop rax
+	mov ds, ax
 
-	add $16, %rsp     # Cleans up the pushed error code and pushed ISR number
-	iretq           # pops 5 things at once: CS, RIP, RFLAGS, SS, and RSP
+	pop r11
+	pop r10
+	pop r9
+	pop r8
+	pop rdi
+	pop rcx
+	pop rax
 
-irq_stub:
-	# Push all registers
-	push %rax
-	push %rcx
-	push %rdx
-	push %rsi
-	push %rdi
-	push %r8
-	push %r9
-	push %r10
-	push %r11
+	pop rsi
+	pop rdx
 
-    mov %ds, %ax               # Lower 16-bits of eax = ds.
-	movzx %ax, %rax
-    push %rax                 # save the data segment descriptor
-
-    mov $0x10, %ax
-	mov %ax, %ds
-
-	mov %rsp, %rdi
-    call irq_handler
-
-    pop %rax        # reload the original data segment descriptor
-	mov %ax, %ds
-	
-	# Pop all registers
-	pop %r11
-	pop %r10
-	pop %r9
-	pop %r8
-	pop %rdi
-	pop %rsi
-	pop %rdx
-	pop %rcx
-	pop %rax
-
-	add $16, %rsp     # Cleans up the pushed error code and pushed ISR number
-	iretq           # pops 5 things at once: CS, RIP, RFLAGS, SS, and RSP
+	iretq

@@ -4,79 +4,124 @@
 
 namespace Arch
 {
-	struct IDTEntry
-	{
-		uint8_t data[16];
-	} __attribute__((packed));
-	
 	struct InterruptGate
 	{
-		uint16_t base_low;
+		uint16_t target_low;
 		uint16_t segment_selector;
-		uint8_t ist_reserved0;
+
+		unsigned int ist : 3;
+		unsigned int reserved_0 : 5;
 
 		unsigned int type : 4;
 		unsigned int zero : 1;
 		unsigned int privilege_level : 2;
 		unsigned int present : 1;
 
-		uint16_t base_medium;
-		uint32_t base_high;
-		uint64_t reserved1;
+		uint16_t target_medium;
+		uint32_t target_high;
+		uint32_t reserved_1;
 	} __attribute__((packed));
+
+	verify_size(InterruptGate, 16);
 	
+	struct IDT
+	{
+		InterruptGate gates[interrupt_handler_count];
+	} __attribute__((packed));
+
 	struct IDTPointer
 	{
 		uint16_t limit;
-		IDTEntry *base;
+		IDT *base;
 	} __attribute__((packed));
-	
-	IDTEntry idt_entries[256];
+
+	IDT idt;
 	IDTPointer idt_ptr;
-	interrupt_handler_t interrupt_handlers[256];
 
-	void set_gate(uint8_t index, void(*base_ptr)());
-	
-	extern "C" void isr_handler(const InterruptInfo &info);
-	extern "C" void irq_handler(const InterruptInfo &info);
-};
+	interrupt_handler_t interrupt_handlers[interrupt_handler_count] asm("interrupt_handlers");
 
-void Arch::register_interrupt_handler(uint8_t index, interrupt_handler_t handler)
-{
-	interrupt_handlers[index] = handler;
-}
+	typedef void(*isr_stub_t)();
 
-void Arch::set_gate(uint8_t index, void(*base_ptr)())
-{
-	uint64_t base = (uint64_t)base_ptr;
-	
-	InterruptGate &gate = reinterpret_cast<InterruptGate &>(idt_entries[index]);
-	
-	gate.base_low = base & 0xFFFF;
-	gate.base_medium = (base >> 16) & 0xFFFF;
-	gate.base_high = (base >> 32) & 0xFFFFFFFF;
-	gate.segment_selector = 0x08;
-	gate.type = 0xE;
-	gate.zero = 0;
-	gate.privilege_level = 0;
-	gate.present = 1;
-}
+	void set_gate(uint8_t index, isr_stub_t stub, bool user = false)
+	{
+		uint64_t target = (uint64_t)stub;
 
-extern "C" void Arch::isr_handler(const InterruptInfo &info)
-{
-	interrupt_handler_t handler = interrupt_handlers[info.interrupt_index];
-	
-	if(handler)
-		handler(info);
-	else
+		InterruptGate &gate = idt.gates[index];
+
+		gate.target_low = target & 0xFFFF;
+		gate.target_medium = (target >> 16) & 0xFFFF;
+		gate.target_high = (target >> 32) & 0xFFFFFFFF;
+		gate.segment_selector = 0x08;
+		gate.type = 0xE;
+		gate.zero = 0;
+		gate.privilege_level = user ? 3 : 0;
+		gate.present = 1;
+	}
+
+	extern "C" void isr_handler();
+
+	template<uint8_t num> __attribute__((naked)) void isr_stub();
+
+	template<uint8_t num> void isr_stub()
+	{
+		asm volatile ("push %%rdx\n"
+			"push %%rsi\n"
+			"mov %0, %%rsi\n"
+			"jmp isr_handler"
+			:: "i"(num));
+	}
+
+	template<uint8_t num> __attribute__((naked)) void isr_error_code_stub();
+
+	template<uint8_t num> void isr_error_code_stub()
+	{
+		asm volatile ("xchg %%rdx, (%%rsp)\n"
+			"push %%rsi\n"
+			"mov %0, %%rsi\n"
+			"jmp isr_handler"
+			:: "i"(num));
+	}
+
+	template<size_t index> struct IsrSelector
+	{
+		static isr_stub_t select()
+		{
+			return &isr_stub<index>;
+		}
+	};
+
+	template<> struct IsrSelector<8> { static isr_stub_t select() { return &isr_error_code_stub<8>; } };
+	template<> struct IsrSelector<10> { static isr_stub_t select() { return &isr_error_code_stub<10>; } };
+	template<> struct IsrSelector<11> { static isr_stub_t select() { return &isr_error_code_stub<11>; } };
+	template<> struct IsrSelector<12> { static isr_stub_t select() { return &isr_error_code_stub<12>; } };
+	template<> struct IsrSelector<13> { static isr_stub_t select() { return &isr_error_code_stub<13>; } };
+
+	template<size_t index> struct IsrSetup
+	{
+		static void setup()
+		{
+			set_gate(index, IsrSelector<index>::select());
+
+			return IsrSetup<index + 1>::setup();
+		}
+	};
+
+	template<> struct IsrSetup<interrupt_handler_count - 1>
+	{
+		static void setup()
+		{
+		}
+	};
+
+	void default_handler(const InterruptInfo &info, uint8_t index, size_t error_code)
 	{
 		uint64_t cr2;
-		
-		asm("mov %%cr2, %%rax" : "=a"(cr2)); 
-		
-		console.panic().s("Unhandled interrupt: ").u(info.interrupt_index).lb().lb().color(Console::Default)
-			.s("errnr:  ").x(info.error_code).a()
-			.s("indx:   ").x(info.interrupt_index).a()
+
+		asm ("mov %%cr2, %%rax" : "=a"(cr2));
+
+		console.panic().s("Unhandled interrupt: ").u(index).lb().lb().color(Console::Default)
+			.s("errnr:  ").x(error_code).a()
+			.s("indx:   ").x(index).a()
 			.lb()
 			.s("rsp:    ").x(info.rsp).a()
 			.s("rip:    ").x(info.rip).a()
@@ -94,63 +139,13 @@ extern "C" void Arch::isr_handler(const InterruptInfo &info)
 			.s("rflags: ").x(info.rflags).a()
 		.endl();
 	}
-}
+};
 
-extern "C" void Arch::irq_handler(const InterruptInfo &info)
+void Arch::register_interrupt_handler(uint8_t index, interrupt_handler_t handler)
 {
-	isr_handler(info);
-
-	APIC::eoi();
+	interrupt_handlers[index] = handler;
 }
 
-extern "C" void isr0();
-extern "C" void isr1();
-extern "C" void isr2();
-extern "C" void isr3();
-extern "C" void isr4();
-extern "C" void isr5();
-extern "C" void isr6();
-extern "C" void isr7();
-extern "C" void isr8();
-extern "C" void isr9();
-extern "C" void isr10();
-extern "C" void isr11();
-extern "C" void isr12();
-extern "C" void isr13();
-extern "C" void isr14();
-extern "C" void isr15();
-extern "C" void isr16();
-extern "C" void isr17();
-extern "C" void isr18();
-extern "C" void isr19();
-extern "C" void isr20();
-extern "C" void isr21();
-extern "C" void isr22();
-extern "C" void isr23();
-extern "C" void isr24();
-extern "C" void isr25();
-extern "C" void isr26();
-extern "C" void isr27();
-extern "C" void isr28();
-extern "C" void isr29();
-extern "C" void isr30();
-extern "C" void isr31();
-extern "C" void irq0();
-extern "C" void irq1();
-extern "C" void irq2();
-extern "C" void irq3();
-extern "C" void irq4();
-extern "C" void irq5();
-extern "C" void irq6();
-extern "C" void irq7();
-extern "C" void irq8();
-extern "C" void irq9();
-extern "C" void irq10();
-extern "C" void irq11();
-extern "C" void irq12();
-extern "C" void irq13();
-extern "C" void irq14();
-extern "C" void irq15();
 extern "C" void spurious_irq();
 
 void setup_pics()
@@ -186,61 +181,17 @@ void setup_pics()
 
 void Arch::initialize_idt()
 {
-	idt_ptr.limit = sizeof(idt_entries) - 1;
-	idt_ptr.base = idt_entries;
+	idt_ptr.limit = sizeof(idt) - 1;
+	idt_ptr.base = &idt;
 
 	setup_pics();
 
-	set_gate(0, isr0);
-	set_gate(1, isr1);
-	set_gate(2, isr2);
-	set_gate(3, isr3);
-	set_gate(4, isr4);
-	set_gate(5, isr5);
-	set_gate(6, isr6);
-	set_gate(7, isr7);
-	set_gate(8, isr8);
-	set_gate(9, isr9);
-	set_gate(10, isr10);
-	set_gate(11, isr11);
-	set_gate(12, isr12);
-	set_gate(13, isr13);
-	set_gate(14, isr14);
-	set_gate(15, isr15);
-	set_gate(16, isr16);
-	set_gate(17, isr17);
-	set_gate(18, isr18);
-	set_gate(19, isr19);
-	set_gate(20, isr20);
-	set_gate(21, isr21);
-	set_gate(22, isr22);
-	set_gate(23, isr23);
-	set_gate(24, isr24);
-	set_gate(25, isr25);
-	set_gate(26, isr26);
-	set_gate(27, isr27);
-	set_gate(28, isr28);
-	set_gate(29, isr29);
-	set_gate(30, isr30);
-	set_gate(31, isr31);
-	set_gate(32, irq0);
-	set_gate(33, irq1);
-	set_gate(34, irq2);
-	set_gate(35, irq3);
-	set_gate(36, irq4);
-	set_gate(37, irq5);
-	set_gate(38, irq6);
-	set_gate(39, irq7);
-	set_gate(40, irq8);
-	set_gate(41, irq9);
-	set_gate(42, irq10);
-	set_gate(43, irq11);
-	set_gate(44, irq12);
-	set_gate(45, irq13);
-	set_gate(46, irq14);
-	set_gate(47, irq15);
+	IsrSetup<0>::setup();
 
 	set_gate(0xFF, spurious_irq);
+
+	for(size_t i = 0; i < interrupt_handler_count; ++i)
+		interrupt_handlers[i] = &default_handler;
 
 	load_idt();
 }

@@ -1,4 +1,4 @@
-require 'fileutils'
+﻿require 'fileutils'
 require 'lokar'
 require_relative 'rake/build'
 
@@ -9,12 +9,10 @@ def preprocess(input, output, binding)
 end
 
 def assemble(build, source, objects)
-	assembly = source.output(".s")
 	object_file = source.output(".o")
 	
 	build.process object_file, source.path do
-		build.execute 'clang', '-E', source.path, '-o', assembly
-		build.execute 'x86_64-elf-as', assembly, '-o', object_file
+		build.execute 'x86_64-elf-as', source.path, '-o', object_file
 	end
 	
 	objects << object_file

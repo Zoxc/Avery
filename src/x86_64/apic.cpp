@@ -100,7 +100,7 @@ namespace APIC
 
 	volatile bool oneshot_done;
 
-	void simple_oneshot_wake(const Arch::InterruptInfo &)
+	void simple_oneshot_wake(const Arch::InterruptInfo &, uint8_t, size_t)
 	{
 		oneshot_done = true;
 		reg(reg_eoi) = 0;

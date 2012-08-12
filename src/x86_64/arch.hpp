@@ -7,10 +7,10 @@ namespace Arch
 {
 	struct InterruptInfo
 	{
-		uint64_t ds;                  // Data segment selector
-		uint64_t r11, r10, r9, r8, rdi, rsi, rdx, rcx, rax; // Pushed by pusha.
-		uint64_t interrupt_index, error_code;    // Interrupt number and error code (if applicable)
-		uint64_t rip, cs, rflags, rsp, ss; // Pushed by the processor automatically.
+		uint64_t ds;
+		uint16_t padding[3];
+		uint64_t r11, r10, r9, r8, rdi, rcx, rax, rsi, rdx;
+		uint64_t rip, cs, rflags, rsp, ss;
 	} __attribute__((packed));
 
 	struct Registers
@@ -29,12 +29,12 @@ namespace Arch
 		}
 	};
 	
-	typedef void (*interrupt_handler_t)(const InterruptInfo &);
+	typedef void (*interrupt_handler_t)(const InterruptInfo &info, uint8_t index, size_t error_code);
 	
 	const size_t page_size = 0x1000;
 
-	extern interrupt_handler_t interrupt_handlers[256];
-	
+	const size_t interrupt_handler_count = 256;
+
 	void register_interrupt_handler(uint8_t index, interrupt_handler_t handler);
 
 	void write_gs_base(ptr_t base);
