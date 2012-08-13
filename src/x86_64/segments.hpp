@@ -3,9 +3,9 @@
 
 struct CPU;
 
-namespace Arch
+namespace Segments
 {
-	struct TaskStateSegment
+	struct TaskState
 	{
 		uint32_t reserved_0;
 		uint64_t rsps[3];
@@ -16,9 +16,9 @@ namespace Arch
 		uint16_t io_bitmap_offset;
 	} __attribute__((packed));
 
-	verify_size(TaskStateSegment, 0x68);
+	verify_size(TaskState, 0x68);
 
-	struct TaskStateSegmentDescriptor
+	struct TaskStateDescriptor
 	{
 		uint16_t limit_low;
 		uint16_t base_low;
@@ -37,7 +37,7 @@ namespace Arch
 		uint32_t reserved_1;
 	} __attribute__((packed));
 
-	struct SegmentDescriptor
+	struct Descriptor
 	{
 		uint16_t limit_low;
 		uint16_t base_low;

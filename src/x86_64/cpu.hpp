@@ -19,7 +19,7 @@ struct CPU
 	Memory::Block *stack;
 	Memory::VirtualPage *local_pages;
 	void *stack_end;
-	Arch::TaskStateSegment tss;
+	Segments::TaskState tss;
 
 	static const size_t local_page_count = 1;
 

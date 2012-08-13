@@ -176,7 +176,7 @@ void CPU::initialize()
 		APIC::ipi(cpus[i].apic_id, APIC::Init, 0);
 	}
 
-	Arch::setup_tss(CPU::bsp);
+	Segments::setup_tss(CPU::bsp);
 
 	if(CPU::count == 1)
 		goto started;
@@ -202,8 +202,8 @@ started:
 
 extern "C" void ap_entry(CPU *cpu)
 {
-	Arch::load_gdt(cpu);
-	Arch::setup_tss(cpu);
+	Segments::load_gdt(cpu);
+	Segments::setup_tss(cpu);
 	Interrupts::load_idt();
 
 	cpu->started = true;
