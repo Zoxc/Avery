@@ -116,7 +116,7 @@ build_kernel = proc do
 	build.run do
 		sources.each do |source|
 			case source.ext
-				when '.S'
+				when '.s'
 					assemble(build, source, objects)
 				when '.cpp', '.c'
 					options = ['-target', 'x86_64-generic-generic', '-g']

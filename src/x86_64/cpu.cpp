@@ -1,6 +1,6 @@
 #include "cpu.hpp"
 #include "apic.hpp"
-#include "gdt.hpp"
+#include "segments.hpp"
 #include "interrupts.hpp"
 #include "acpi.hpp"
 #include "../memory.hpp"

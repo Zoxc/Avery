@@ -1,4 +1,4 @@
-#include "gdt.hpp"
+#include "segments.hpp"
 #include "memory.hpp"
 #include "cpu.hpp"
 

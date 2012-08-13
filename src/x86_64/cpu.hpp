@@ -1,6 +1,6 @@
 #pragma once
 #include "arch.hpp"
-#include "gdt.hpp"
+#include "segments.hpp"
 
 namespace Memory
 {

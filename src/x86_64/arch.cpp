@@ -4,7 +4,7 @@
 #include "apic.hpp"
 #include "acpi.hpp"
 #include "cpu.hpp"
-#include "gdt.hpp"
+#include "segments.hpp"
 #include "interrupts.hpp"
 
 void Arch::initialize_basic()

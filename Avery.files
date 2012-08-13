@@ -1,6 +1,5 @@
 src/x86_64/arch.cpp
 src/x86_64/arch.hpp
-src/x86_64/gdt.cpp
 src/x86_64/memory.cpp
 src/x86_64/memory.hpp
 src/common.hpp
@@ -13,7 +12,6 @@ src/lib.hpp
 Rakefile
 src/x86_64/apic.cpp
 src/x86_64/apic.hpp
-src/x86_64/load-segments.S
 src/consoles/fb.hpp
 src/consoles/fb.cpp
 src/consoles/display.hpp
@@ -25,9 +23,7 @@ src/params.hpp
 src/params.cpp
 src/physical_mem.hpp
 src/physical_mem.cpp
-src/x86_64/boot/boot.S
 src/x86_64/boot/boot.cpp
-src/x86_64/multiboot/bootstrap/bootstrap.S
 src/x86_64/multiboot/bootstrap/multiboot.hpp
 src/x86_64/multiboot/bootstrap/console.hpp
 src/x86_64/multiboot/bootstrap/common.hpp
@@ -38,7 +34,6 @@ src/x86_64/multiboot/boot.cpp
 src/consoles/vga.hpp
 src/consoles/vga.cpp
 src/x86_64/kernel.ld
-src/x86_64/interrupts.S
 src/memory.hpp
 src/memory.cpp
 src/util/linked-list.hpp
@@ -47,8 +42,6 @@ src/x86_64/acpi.hpp
 src/x86_64/acpi.cpp
 src/x86_64/cpu.hpp
 src/x86_64/cpu.cpp
-src/x86_64/cpu.S
-src/x86_64/gdt.hpp
 src/x86_64/io-apic.hpp
 src/x86_64/io-apic.cpp
 src/util/vector.hpp
@@ -69,3 +62,6 @@ src/thread.hpp
 src/thread.cpp
 src/x86_64/interrupts.hpp
 src/x86_64/interrupts.cpp
+src/x86_64/syscalls.cpp
+src/x86_64/segments.hpp
+src/x86_64/segments.cpp
