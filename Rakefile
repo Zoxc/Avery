@@ -25,6 +25,27 @@ def bitcode_link(build, object, bitcode, bitcodes, options)
 	end
 end
 
+def analyze(pattern, x86_32 = nil)
+	files = Dir[pattern]
+	x86_32_files = Dir[x86_32] if x86_32
+	
+	files.each do |file|
+		next if Dir.exists? file
+		next if File.extname(file) != '.cpp'
+		
+		puts "Analyzing #{file}..."
+		
+		target = 'x86_64-generic-generic'
+		target = 'i386-generic-generic' if x86_32 && x86_32_files.include?(file)
+		
+		Build.execute 'clang', '-target', *target, '-std=gnu++11', '-S', '--analyze', file
+	end
+end
+
+task :analyze do
+	analyze('src/**/*', 'src/x86_64/multiboot/bootstrap/**/*')
+end
+
 build_user = proc do
 	build = Build.new('build', 'usr_info.yml')
 	
@@ -60,6 +81,9 @@ build_user = proc do
 		build.process user_binary, *objects do
 			build.execute 'x86_64-elf-ld', '-z', 'max-page-size=0x1000', '-T', 'usr/link.ld', *objects, '-o', user_binary
 		end
+		
+		build.execute 'bin\mcopy', '-D', 'o', '-D', 'O', '-i' ,'emu/grubdisk.img@@1M', user_binary, '::usr.elf'
+		FileUtils.cp user_binary, "emu/hda/efi/boot"
 	end
 end
 
