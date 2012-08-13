@@ -46,4 +46,6 @@ void Init::load_modules()
 		if(segment.type == Params::SegmentModule && strncmp(segment.name, "user", sizeof(segment.name)) == 0)
 			start_process(segment.name, segment.base, segment.end);
 	}
+
+	panic("Didn't find the userland module");
 }
