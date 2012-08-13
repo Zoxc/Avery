@@ -42,7 +42,7 @@ namespace Interrupts
 
 	typedef void(*isr_stub_t)();
 
-	void set_gate(uint8_t index, isr_stub_t stub, bool user = false)
+	void set_gate(uint8_t index, isr_stub_t stub)
 	{
 		uint64_t target = (uint64_t)stub;
 
@@ -54,8 +54,16 @@ namespace Interrupts
 		gate.segment_selector = 0x08;
 		gate.type = 0xE;
 		gate.zero = 0;
-		gate.privilege_level = user ? 3 : 0;
+		gate.privilege_level = 0;
 		gate.present = 1;
+	}
+
+	void set_gate_options(uint8_t index, bool user, bool trap)
+	{
+		InterruptGate &gate = idt.gates[index];
+
+		gate.type = trap ? 0xF : 0xE;
+		gate.privilege_level = user ? 3 : 0;
 	}
 
 	extern "C" void isr_handler();
@@ -68,7 +76,7 @@ namespace Interrupts
 			"push %%rsi\n"
 			"mov %0, %%rsi\n"
 			"jmp isr_handler"
-			:: "i"(num));
+			:: "i"((int16_t)num)); // TODO: Remove LLVM bug workaround
 	}
 
 	template<uint8_t num> __attribute__((naked)) void isr_error_code_stub();
@@ -79,7 +87,7 @@ namespace Interrupts
 			"push %%rsi\n"
 			"mov %0, %%rsi\n"
 			"jmp isr_handler"
-			:: "i"(num));
+			:: "i"((int16_t)num)); // TODO: Remove LLVM bug workaround
 	}
 
 	template<size_t index> struct IsrSelector
@@ -113,6 +121,11 @@ namespace Interrupts
 		}
 	};
 
+	void syscall_test(const Info &info, uint8_t , size_t)
+	{
+		console.c(info.rdi);
+	}
+
 	void default_handler(const Info &info, uint8_t index, size_t error_code)
 	{
 		uint64_t cr2;
@@ -121,7 +134,7 @@ namespace Interrupts
 
 		console.panic().s("Unhandled interrupt: ").u(index).lb().lb().color(Console::Default)
 			.s("errnr:  ").x(error_code).a()
-			.s("indx:   ").x(index).a()
+			.s("rsi:   ").x(info.rsi).a()
 			.lb()
 			.s("rsp:    ").x(info.rsp).a()
 			.s("rip:    ").x(info.rip).a()
@@ -196,6 +209,9 @@ namespace Interrupts
 
 		for(size_t i = 0; i < handler_count; ++i)
 			handlers[i] = &default_handler;
+
+		set_gate_options(0x80, true, true);
+		handlers[0x80] = &syscall_test;
 
 		load_idt();
 	}

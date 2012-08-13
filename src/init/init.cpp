@@ -29,7 +29,7 @@ static void start_process(const char *name, addr_t base, addr_t end)
 
 	thread->stack = process->allocator.allocate(User::Block::Stack, 10);
 
-	Memory::map(thread->stack->base + 1, thread->stack->pages - 1, Memory::rw_data_flags, &process->address_space);
+	Memory::map(thread->stack->base + 1, thread->stack->pages - 1, Memory::rw_data_flags | Memory::usermode_bit, &process->address_space);
 
 	thread->registers.set_ip(entry);
 	thread->registers.set_stack((ptr_t)(thread->stack->base + thread->stack->pages));

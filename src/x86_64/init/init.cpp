@@ -5,7 +5,9 @@
 
 void Init::enter_usermode(Thread *thread)
 {
-	thread->registers.ss = 0x23;
+	const uint16_t data_segment = 0x23;
+
+	thread->registers.ss = data_segment;
 	thread->registers.cs = 0x1b;
 
 	asm volatile ("pushfq\n pop %%rax" : "=a"(thread->registers.rflags));
@@ -16,7 +18,10 @@ void Init::enter_usermode(Thread *thread)
 	.s(" - ss: ").x(thread->registers.ss)
 	.s(" - rsp: ").x(thread->registers.rsp).endl();
 
-	asm volatile ("cli\n mov %0, %%rsp\n iretq" :: "r"(&thread->registers.rip));
+	asm volatile ("cli\n"
+		"mov %%ax, %%ds\n"
+		"mov %0, %%rsp\n"
+		"iretq" :: "r"(&thread->registers.rip), "a"(data_segment));
 }
 
 ptr_t Init::load_module(Process *process, const void *obj, size_t)

@@ -5,7 +5,7 @@ namespace Interrupts
 {
 	struct Info
 	{
-		uint64_t ds;
+		uint16_t ds;
 		uint16_t padding[3];
 		uint64_t r11, r10, r9, r8, rdi, rcx, rax, rsi, rdx;
 		uint64_t rip, cs, rflags, rsp, ss;
