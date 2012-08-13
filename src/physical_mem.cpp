@@ -99,7 +99,7 @@ void Memory::Physical::initialize()
 {
 	hole_count = 0;
 	
-	Hole *overhead_hole;
+	Hole *overhead_hole = 0;
 	
 	for(Initial::Entry *entry = Initial::list; entry; entry = entry->next, ++hole_count)
 	{

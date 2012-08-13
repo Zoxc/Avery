@@ -185,6 +185,8 @@ void Memory::Initial::initialize_physical()
 	
 	entry = find_biggest_entry();
 
+	assert(entry, "No biggest entry found");
+
 	overhead = 0;
 	size_t memory_in_pages = 0;
 	
