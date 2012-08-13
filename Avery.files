@@ -67,6 +67,5 @@ src/x86_64/init/init.cpp
 src/x86_64/init/elf.h
 src/thread.hpp
 src/thread.cpp
-src/x86_64/user.S
 src/x86_64/interrupts.hpp
 src/x86_64/interrupts.cpp
