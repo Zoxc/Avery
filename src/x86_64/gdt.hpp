@@ -67,5 +67,7 @@ namespace Arch
 	
 	extern GDTPointer gdt_ptr;
 
-	void initialize_gdt(CPU *cpu);
+	void initialize_gdt();
+	void load_gdt(CPU *cpu);
+	void setup_tss(CPU *cpu);
 };

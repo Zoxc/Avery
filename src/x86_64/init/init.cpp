@@ -12,12 +12,6 @@ void Init::enter_usermode(Thread *thread)
 
 	asm volatile ("pushfq\n pop %%rax" : "=a"(thread->registers.rflags));
 
-	console.s("entering usermode rip: ").x(thread->registers.rip)
-	.s(" - rflags: ").x(thread->registers.rflags)
-	.s(" - cs: ").x(thread->registers.cs)
-	.s(" - ss: ").x(thread->registers.ss)
-	.s(" - rsp: ").x(thread->registers.rsp).endl();
-
 	asm volatile ("cli\n"
 		"mov %%ax, %%ds\n"
 		"mov %0, %%rsp\n"
@@ -65,8 +59,6 @@ ptr_t Init::load_module(Process *process, const void *obj, size_t)
 		memcpy(segment->base, buffer + program_header->p_offset, program_header->p_filesz);
 
 		Memory::protect(segment->base, aligned_pages, flags);
-
-		console.s("Loaded section to ").x(segment->base).s(" - ").x(segment->base + segment->pages).s(" - flags ").x(flags).endl();
 	}
 
 	return header->e_entry;

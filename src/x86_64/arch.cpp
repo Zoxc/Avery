@@ -12,7 +12,7 @@ void Arch::initialize_basic()
 	// turn on write protect
 	asm volatile ("mov %%cr0, %%rax; or %0, %%rax; mov %%rax, %%cr0" :: "i"((1 << 16)) : "rax");
 
-	initialize_gdt(CPU::bsp);
+	initialize_gdt();
 	CPU::initialize_basic();
 	Interrupts::initialize_idt();
 }

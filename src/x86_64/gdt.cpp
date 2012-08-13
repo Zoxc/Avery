@@ -53,22 +53,31 @@ void Arch::set_task_segment(ptr_t base)
 
 extern "C" void load_segments(size_t data, size_t code);
 
-void Arch::initialize_gdt(CPU *cpu)
+void Arch::initialize_gdt()
 {
 	set_segment(1, true, false);
 	set_segment(2, false, false);
 	set_segment(3, true, true);
 	set_segment(4, false, true);
 
+	gdt_ptr.limit = sizeof(gdt) - 1;
+	gdt_ptr.base = &gdt;
+
+	load_gdt(CPU::bsp);
+}
+
+void Arch::load_gdt(CPU *)
+{
+	asm volatile("lgdt %0" :: "m"(gdt_ptr));
+
+	load_segments(0x10, 0x8);
+}
+
+void Arch::setup_tss(CPU *cpu)
+{
 	cpu->tss.rsps[0] = (ptr_t)cpu->stack_end;
 
 	set_task_segment((ptr_t)&cpu->tss);
-	
-	gdt_ptr.limit = sizeof(gdt) - 1;
-	gdt_ptr.base = &gdt;
-	
-	asm volatile("lgdt %0" :: "m"(gdt_ptr));
-	asm volatile("ltr %%ax" :: "a"(__builtin_offsetof(GDT, tss)));
 
-	load_segments(0x10, 0x8);
+	asm volatile("ltr %%ax" :: "a"(__builtin_offsetof(GDT, tss)));
 }

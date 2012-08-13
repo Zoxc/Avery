@@ -151,9 +151,6 @@ void CPU::initialize()
 
 	bsp->started = true;
 
-	if(CPU::count == 1)
-		goto started;
-
 	// Wake up other CPUs
 
 	for(size_t i = 0; i < count; ++i)
@@ -167,17 +164,22 @@ void CPU::initialize()
 		cpus[i].stack = stack;
 		cpus[i].stack_end = stack->base + stack->pages;
 
+		Memory::map(stack->base + 1, stack_pages);
+
 		if(&cpus[i] == bsp)
 			continue;
 
 		cpus[i].started = false;
 
-		Memory::map(stack->base + 1, stack_pages);
-
 		console.s("Starting CPU with id: ").u(cpus[i].acpi_id).endl();
 
 		APIC::ipi(cpus[i].apic_id, APIC::Init, 0);
 	}
+
+	Arch::setup_tss(CPU::bsp);
+
+	if(CPU::count == 1)
+		goto started;
 
 	APIC::simple_oneshot(1300000);
 
@@ -200,7 +202,8 @@ started:
 
 extern "C" void ap_entry(CPU *cpu)
 {
-	Arch::initialize_gdt(cpu);
+	Arch::load_gdt(cpu);
+	Arch::setup_tss(cpu);
 	Interrupts::load_idt();
 
 	cpu->started = true;
