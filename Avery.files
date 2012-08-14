@@ -66,3 +66,8 @@ src/x86_64/syscalls.cpp
 src/x86_64/segments.hpp
 src/x86_64/segments.cpp
 src/x86_64/syscalls.hpp
+src/x86_64/segments.s
+src/x86_64/interrupts.s
+src/x86_64/cpu.s
+src/x86_64/boot/boot.s
+src/x86_64/multiboot/bootstrap/bootstrap.s
