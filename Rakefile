@@ -18,10 +18,13 @@ def assemble(build, source, objects)
 	objects << object_file
 end
 
-def bitcode_link(build, object, bitcode, bitcodes, options)
-	build.process object, *bitcodes do
+def bitcode_link(build, object, bitcode, bitcodes, options, &block)
+	build.process object, *bitcodes do ||
+		assembly = bitcode + ".s"
 		build.execute 'llvm-link', *bitcodes, "-o=#{bitcode}"
-		build.execute 'llc', bitcode, '-filetype=obj', *options, '-relocation-model=static', '-disable-fp-elim', '-mattr=-sse,-sse2,-mmx', '-O2', '-o', object
+		build.execute 'llc', bitcode, '-filetype=asm', *options, '-relocation-model=static', '-disable-fp-elim', '-mattr=-sse,-sse2,-mmx', '-O2', '-o', assembly
+		block.call(assembly) if block
+		build.execute 'x86_64-elf-as', assembly, '-o', object
 	end
 end
 
@@ -91,7 +94,6 @@ type = :multiboot
 build_kernel = proc do
 	build = Build.new('build', 'info.yml')
 	kernel_binary = build.output "#{type}/kernel.elf"
-	kernel_bitcode_bootstrap = build.output "#{type}/bootstrap.bc"
 	kernel_object = build.output "#{type}/kernel.o"
 	kernel_assembly_bootstrap = build.output "#{type}/bootstrap.s"
 	kernel_object_bootstrap = build.output "#{type}/bootstrap.o"
@@ -143,16 +145,13 @@ build_kernel = proc do
 		puts "Linking..."
 		
 		if type == :multiboot
-			build.process kernel_object_bootstrap, *bitcodes_bootstrap do
-				build.execute 'llvm-link', *bitcodes_bootstrap, "-o=#{kernel_bitcode_bootstrap}"
-				build.execute 'llc', kernel_bitcode_bootstrap, '-filetype=asm', '-mattr=-sse,-sse2,-mmx', '-O2', '-o', kernel_assembly_bootstrap
-				File.open(kernel_assembly_bootstrap, 'r+') do |file|
+			bitcode_link(build, kernel_object_bootstrap, build.output("#{type}/bootstrap.bc"), bitcodes_bootstrap, []) do |assembly|
+				File.open(assembly, 'r+') do |file|
 					content = file.read
 					file.pos = 0
 					file.write ".code32\n"
 					file.write content
 				end
-				build.execute 'x86_64-elf-as', kernel_assembly_bootstrap, '-o', kernel_object_bootstrap
 			end
 			
 			objects << kernel_object_bootstrap
