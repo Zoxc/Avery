@@ -77,6 +77,8 @@ namespace Interrupts
 			"mov %0, %%rsi\n"
 			"jmp isr_handler"
 			:: "i"((int16_t)num)); // TODO: Remove LLVM bug workaround
+
+		__builtin_unreachable();
 	}
 
 	template<uint8_t num> __attribute__((naked)) void isr_error_code_stub();
@@ -88,6 +90,8 @@ namespace Interrupts
 			"mov %0, %%rsi\n"
 			"jmp isr_handler"
 			:: "i"((int16_t)num)); // TODO: Remove LLVM bug workaround
+
+		__builtin_unreachable();
 	}
 
 	template<size_t index> struct IsrSelector
@@ -103,6 +107,8 @@ namespace Interrupts
 	template<> struct IsrSelector<11> { static isr_stub_t select() { return &isr_error_code_stub<11>; } };
 	template<> struct IsrSelector<12> { static isr_stub_t select() { return &isr_error_code_stub<12>; } };
 	template<> struct IsrSelector<13> { static isr_stub_t select() { return &isr_error_code_stub<13>; } };
+	template<> struct IsrSelector<14> { static isr_stub_t select() { return &isr_error_code_stub<14>; } };
+	template<> struct IsrSelector<17> { static isr_stub_t select() { return &isr_error_code_stub<17>; } };
 
 	template<size_t index> struct IsrSetup
 	{
@@ -121,11 +127,6 @@ namespace Interrupts
 		}
 	};
 
-	void syscall_test(const Info &info, uint8_t , size_t)
-	{
-		console.c(info.rdi);
-	}
-
 	void default_handler(const Info &info, uint8_t index, size_t error_code)
 	{
 		uint64_t cr2;
@@ -134,7 +135,7 @@ namespace Interrupts
 
 		console.panic().s("Unhandled interrupt: ").u(index).lb().lb().color(Console::Default)
 			.s("errnr:  ").x(error_code).a()
-			.s("rsi:   ").x(info.rsi).a()
+			.s("rsi:    ").x(info.rsi).a()
 			.lb()
 			.s("rsp:    ").x(info.rsp).a()
 			.s("rip:    ").x(info.rip).a()
@@ -209,9 +210,6 @@ namespace Interrupts
 
 		for(size_t i = 0; i < handler_count; ++i)
 			handlers[i] = &default_handler;
-
-		set_gate_options(0x80, true, true);
-		handlers[0x80] = &syscall_test;
 
 		load_idt();
 	}

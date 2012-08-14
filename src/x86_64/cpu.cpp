@@ -1,6 +1,7 @@
 #include "cpu.hpp"
 #include "apic.hpp"
 #include "segments.hpp"
+#include "syscalls.hpp"
 #include "interrupts.hpp"
 #include "acpi.hpp"
 #include "../memory.hpp"
@@ -177,6 +178,7 @@ void CPU::initialize()
 	}
 
 	Segments::setup_tss(CPU::bsp);
+	Syscalls::initialize();
 
 	if(CPU::count == 1)
 		goto started;
@@ -205,6 +207,7 @@ extern "C" void ap_entry(CPU *cpu)
 	Segments::load_gdt(cpu);
 	Segments::setup_tss(cpu);
 	Interrupts::load_idt();
+	Syscalls::initialize();
 
 	cpu->started = true;
 

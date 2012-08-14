@@ -5,6 +5,12 @@ struct CPU;
 
 namespace Segments
 {
+	static const constexpr uint16_t code_segment = 0x8;
+	static const constexpr uint16_t data_segment = 0x10;
+
+	static const constexpr uint16_t user_code_segment = 0x1b;
+	static const constexpr uint16_t user_data_segment = 0x23;
+
 	struct TaskState
 	{
 		uint32_t reserved_0;

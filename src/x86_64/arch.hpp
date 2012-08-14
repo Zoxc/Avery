@@ -7,6 +7,10 @@ namespace Arch
 {
 	struct Registers
 	{
+		Registers();
+
+		static const uint64_t rflags_default = 0x202;
+
 		uint64_t r15, r14, r13, r12, r10, r9, r8, rdi, rsi, rdx, rcx, rbp, rbx, rax;
 		uint64_t rip, cs, rflags, rsp, ss;
 
@@ -20,6 +24,11 @@ namespace Arch
 			rsp = stack;
 		}
 	};
+
+	static const constexpr size_t rflags_bit_interrupt = 1ul << 9;
+
+	static const constexpr uint32_t efer = 0xC0000080;
+	static const constexpr size_t efer_bit_syscalls = 1;
 
 	const size_t page_size = 0x1000;
 

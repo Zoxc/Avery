@@ -34,6 +34,8 @@ static void start_process(const char *name, addr_t base, addr_t end)
 	thread->registers.set_ip(entry);
 	thread->registers.set_stack((ptr_t)(thread->stack->base + thread->stack->pages));
 
+	CPU::current->thread = thread;
+
 	Init::enter_usermode(thread);
 }
 

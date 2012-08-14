@@ -2,7 +2,7 @@
 
 void print(char c)
 {
-	asm volatile("int $0x80" :: "D"(c));
+	asm volatile("syscall" :: "S"(c) : "rdi", "rsi", "rdx", "rcx", "r8", "r9");
 }
 
 void print(const char *str)

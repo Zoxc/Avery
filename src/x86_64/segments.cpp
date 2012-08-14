@@ -69,7 +69,7 @@ namespace Segments
 	{
 		asm volatile("lgdt %0" :: "m"(gdt_ptr));
 
-		load_segments(0x10, 0x8);
+		load_segments(Segments::data_segment, Segments::code_segment);
 	}
 
 	void setup_tss(CPU *cpu)

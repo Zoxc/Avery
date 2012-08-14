@@ -65,3 +65,4 @@ src/x86_64/interrupts.cpp
 src/x86_64/syscalls.cpp
 src/x86_64/segments.hpp
 src/x86_64/segments.cpp
+src/x86_64/syscalls.hpp

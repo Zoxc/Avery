@@ -8,6 +8,8 @@ namespace Memory
 	struct VirtualPage;
 };
 
+class Thread;
+
 struct CPU
 {
 	CPU *self;
@@ -20,6 +22,8 @@ struct CPU
 	Memory::VirtualPage *local_pages;
 	void *stack_end;
 	Segments::TaskState tss;
+	void *syscall_temp_rsp;
+	Thread *thread;
 
 	static const size_t local_page_count = 1;
 

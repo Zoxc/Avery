@@ -7,6 +7,18 @@
 #include "segments.hpp"
 #include "interrupts.hpp"
 
+namespace Arch
+{
+	Registers::Registers()
+	{
+		memset(this, 0, sizeof(Registers));
+
+		cs = Segments::user_code_segment;
+		ss = Segments::user_data_segment;
+		rflags = rflags_default;
+	}
+};
+
 void Arch::initialize_basic()
 {
 	// turn on write protect

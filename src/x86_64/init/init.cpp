@@ -5,17 +5,12 @@
 
 void Init::enter_usermode(Thread *thread)
 {
-	const uint16_t data_segment = 0x23;
-
-	thread->registers.ss = data_segment;
-	thread->registers.cs = 0x1b;
-
-	asm volatile ("pushfq\n pop %%rax" : "=a"(thread->registers.rflags));
-
-	asm volatile ("cli\n"
+	asm volatile (
+		"cli\n"
+		"swapgs\n"
 		"mov %%ax, %%ds\n"
 		"mov %0, %%rsp\n"
-		"iretq" :: "r"(&thread->registers.rip), "a"(data_segment));
+		"iretq" :: "r"(&thread->registers.rip), "a"(Segments::user_data_segment));
 }
 
 ptr_t Init::load_module(Process *process, const void *obj, size_t)
