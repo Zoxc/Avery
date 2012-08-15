@@ -5,6 +5,8 @@
 typedef uintptr_t ptr_t;
 typedef uint64_t addr_t;
 
+static decltype(nullptr) nil __attribute__((unused));
+
 template<class T> static inline const T& min(const T& a, const T& b)
 {
 	return (a < b) ? a : b;
