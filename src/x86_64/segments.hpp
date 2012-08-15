@@ -74,6 +74,6 @@ namespace Segments
 	extern GDTPointer gdt_ptr;
 
 	void initialize_gdt();
-	void load_gdt(CPU *cpu);
-	void setup_tss(CPU *cpu);
+	void load_gdt();
+	void setup_tss();
 };

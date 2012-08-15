@@ -30,6 +30,8 @@ namespace Arch
 	static const constexpr uint32_t efer = 0xC0000080;
 	static const constexpr size_t efer_bit_syscalls = 1;
 
+	static const constexpr size_t gs_base = 0xC0000101;
+
 	const size_t page_size = 0x1000;
 
 	void write_gs_base(ptr_t base);

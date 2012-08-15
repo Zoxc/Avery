@@ -20,15 +20,13 @@ void CPU::initialize_basic()
 
 void CPU::setup_gs()
 {
-	const size_t gs_base = 0xC0000101;
-
-	Arch::write_msr(gs_base, (ptr_t)this);
+	Arch::write_msr(Arch::gs_base, (ptr_t)this);
 }
 
 void CPU::map_local_page_tables()
 {
 	for(auto page = local_pages; page < local_pages + local_page_count; ++page)
-		Memory::ensure_page_entry(page, 0);
+		Memory::ensure_page_entry(page, nil);
 }
 
 void CPU::setup(size_t i)
@@ -127,6 +125,12 @@ bool cpus_started()
 	return true;
 }
 
+void processor_setup()
+{
+	Segments::setup_tss();
+	Syscalls::initialize();
+}
+
 void CPU::initialize()
 {
 	assert(count != 0, "No CPUs found");
@@ -177,9 +181,6 @@ void CPU::initialize()
 		APIC::ipi(cpus[i].apic_id, APIC::Init, 0);
 	}
 
-	Segments::setup_tss(CPU::bsp);
-	Syscalls::initialize();
-
 	if(CPU::count == 1)
 		goto started;
 
@@ -197,6 +198,8 @@ void CPU::initialize()
 		Arch::pause();
 
 started:
+	processor_setup();
+
 	console.s("All CPUs have started").endl();
 
 	Memory::clear_lower();
@@ -204,15 +207,17 @@ started:
 
 extern "C" void ap_entry(CPU *cpu)
 {
-	Segments::load_gdt(cpu);
-	Segments::setup_tss(cpu);
-	Interrupts::load_idt();
-	Syscalls::initialize();
-
-	cpu->started = true;
+	Segments::load_gdt();
 
 	cpu->setup_gs();
+
+	Interrupts::load_idt();
+
+	processor_setup();
+
 	cpu->map_local_page_tables();
+
+	cpu->started = true;
 
 	while(true)
 		Arch::halt();

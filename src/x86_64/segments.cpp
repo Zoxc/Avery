@@ -9,7 +9,7 @@ namespace Segments
 	struct GDT
 	{
 		Descriptor segments[5];
-		TaskStateDescriptor tss;
+		TaskStateDescriptor tsds[CPU::max_cpus];
 	} __attribute__((packed));
 
 	GDT gdt;
@@ -33,7 +33,7 @@ namespace Segments
 
 	void set_task_segment(ptr_t base)
 	{
-		auto &segment = gdt.tss;
+		auto &segment = gdt.tsds[CPU::current->index];
 
 		segment.base_low = base;
 		segment.base_middle = base >> 16;
@@ -62,22 +62,22 @@ namespace Segments
 		gdt_ptr.limit = sizeof(gdt) - 1;
 		gdt_ptr.base = &gdt;
 
-		load_gdt(CPU::bsp);
+		load_gdt();
 	}
 
-	void load_gdt(CPU *)
+	void load_gdt()
 	{
 		asm volatile("lgdt %0" :: "m"(gdt_ptr));
 
 		load_segments(Segments::data_segment, Segments::code_segment);
 	}
 
-	void setup_tss(CPU *cpu)
+	void setup_tss()
 	{
-		cpu->tss.rsps[0] = (ptr_t)cpu->stack_end;
+		CPU::current->tss.rsps[0] = (ptr_t)CPU::current->stack_end;
 
-		set_task_segment((ptr_t)&cpu->tss);
+		set_task_segment((ptr_t)&CPU::current->tss);
 
-		asm volatile("ltr %%ax" :: "a"(__builtin_offsetof(GDT, tss)));
+		asm volatile("ltr %%ax" :: "a"(__builtin_offsetof(GDT, tsds) + sizeof(TaskStateDescriptor) * CPU::current->index));
 	}
 };
