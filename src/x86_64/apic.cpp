@@ -72,18 +72,22 @@ namespace APIC
 
 	void initialize()
 	{
-		size_t base = Arch::read_msr(base_register);
 		addr_t registers_physical;
 
 		if(has_base)
 			registers_physical = register_base;
 		else
-			registers_physical = ((base >> 12) & 0xFFFFFFFFFF) << 12;
+			registers_physical = ((Arch::read_msr(base_register) >> 12) & 0xFFFFFFFFFF) << 12;
 
 		auto mapped_virtual = Memory::map_physical(registers_physical, 1, Memory::rw_data_flags | Memory::no_cache_flags)->base;
 
 		registers = (uint8_t *)mapped_virtual;
 
+		initialize_ap();
+	}
+
+	void initialize_ap()
+	{
 		reg(reg_dfr) = -1;
 		reg(reg_ldr) = (reg(reg_ldr) & 0x00FFFFFF);
 		reg(reg_lvt_timer) = lvt_mask;
@@ -93,7 +97,7 @@ namespace APIC
 		reg(reg_lvt_lint1) = lvt_mask;
 		reg(reg_task_priority) = 0;
 
-		Arch::write_msr(base_register, base | msr_enable_bit);
+		Arch::write_msr(base_register, Arch::read_msr(base_register) | msr_enable_bit);
 
 		reg(reg_siv) = 0xFF | sw_enable;
 	}

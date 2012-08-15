@@ -219,6 +219,8 @@ extern "C" void ap_entry(CPU *cpu)
 
 	cpu->started = true;
 
+	APIC::initialize_ap();
+
 	while(true)
 		Arch::halt();
 };

@@ -21,5 +21,6 @@ namespace APIC
 	size_t local_id();
 	void ipi(size_t target, MessageType type, size_t vector);
 	void initialize();
+	void initialize_ap();
 	void simple_oneshot(size_t ticks);
 };
