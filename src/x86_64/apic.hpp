@@ -1,5 +1,6 @@
 #pragma once
-#include  "arch.hpp"
+#include "arch.hpp"
+#include "io-apic.hpp"
 
 namespace APIC
 {

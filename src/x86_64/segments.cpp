@@ -31,9 +31,11 @@ namespace Segments
 		segment.operand_size = 0;
 	}
 
-	void set_task_segment(ptr_t base)
+	void set_task_segment(TaskState *tss)
 	{
 		auto &segment = gdt.tsds[CPU::current->index];
+
+		ptr_t base = (ptr_t)tss;
 
 		segment.base_low = base;
 		segment.base_middle = base >> 16;
@@ -56,8 +58,8 @@ namespace Segments
 	{
 		set_segment(1, true, false);
 		set_segment(2, false, false);
-		set_segment(3, true, true);
-		set_segment(4, false, true);
+		set_segment(3, false, true);
+		set_segment(4, true, true);
 
 		gdt_ptr.limit = sizeof(gdt) - 1;
 		gdt_ptr.base = &gdt;
@@ -76,7 +78,7 @@ namespace Segments
 	{
 		CPU::current->tss.rsps[0] = (ptr_t)CPU::current->stack_end;
 
-		set_task_segment((ptr_t)&CPU::current->tss);
+		set_task_segment(&CPU::current->self->tss);
 
 		asm volatile("ltr %%ax" :: "a"(__builtin_offsetof(GDT, tsds) + sizeof(TaskStateDescriptor) * CPU::current->index));
 	}

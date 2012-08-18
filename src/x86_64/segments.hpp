@@ -8,8 +8,8 @@ namespace Segments
 	static const constexpr uint16_t code_segment = 0x8;
 	static const constexpr uint16_t data_segment = 0x10;
 
-	static const constexpr uint16_t user_code_segment = 0x1b;
-	static const constexpr uint16_t user_data_segment = 0x23;
+	static const constexpr uint16_t user_code_segment = 0x23;
+	static const constexpr uint16_t user_data_segment = 0x1b;
 
 	struct TaskState
 	{
@@ -43,6 +43,8 @@ namespace Segments
 		uint32_t reserved_1;
 	} __attribute__((packed));
 
+	verify_size(TaskStateDescriptor, 0x10);
+
 	struct Descriptor
 	{
 		uint16_t limit_low;
@@ -63,6 +65,8 @@ namespace Segments
 		uint8_t base_high;
 	} __attribute__((packed));
 	
+	verify_size(Descriptor, 0x8);
+
 	struct GDT;
 
 	struct GDTPointer

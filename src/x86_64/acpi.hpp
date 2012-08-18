@@ -99,7 +99,11 @@ namespace ACPI
 			uint8_t bus;
 			uint8_t source;
 			uint32_t global_int;
-			uint16_t flags;
+			unsigned int polarity : 2;
+			unsigned int trigger_mode : 2;
+			unsigned int reserved : 12;
+
+			static const size_t flag_enabled = 1;
 		} __attribute__((packed));
 	} __attribute__((packed));
 

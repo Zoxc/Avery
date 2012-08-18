@@ -3,6 +3,26 @@
 
 namespace Interrupts
 {
+	struct InterruptGate
+	{
+		uint16_t target_low;
+		uint16_t segment_selector;
+
+		unsigned int ist : 3;
+		unsigned int reserved_0 : 5;
+
+		unsigned int type : 4;
+		unsigned int zero : 1;
+		unsigned int privilege_level : 2;
+		unsigned int present : 1;
+
+		uint16_t target_medium;
+		uint32_t target_high;
+		uint32_t reserved_1;
+	} __attribute__((packed));
+
+	verify_size(InterruptGate, 16);
+
 	struct Info
 	{
 		uint16_t ds;

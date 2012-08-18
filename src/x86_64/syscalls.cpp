@@ -60,7 +60,7 @@ namespace Syscalls
 	void initialize()
 	{
 		Arch::write_msr(Arch::efer, Arch::read_msr(Arch::efer) | Arch::efer_bit_syscalls);
-		Arch::write_msr(star, (((ptr_t)Segments::user_code_segment) << 48) | ((ptr_t)Segments::code_segment << 32));
+		Arch::write_msr(star, (((ptr_t)Segments::user_data_segment - 8) << 48) | ((ptr_t)Segments::code_segment << 32));
 		Arch::write_msr(lstar, (ptr_t)&syscall_enter);
 		Arch::write_msr(sf_mask, Arch::rflags_bit_interrupt);
 	}

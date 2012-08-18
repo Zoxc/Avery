@@ -1,6 +1,7 @@
 #include "acpi.hpp"
 #include "cpu.hpp"
 #include "apic.hpp"
+#include "pit.hpp"
 #include "io-apic.hpp"
 #include "../memory.hpp"
 
@@ -128,7 +129,7 @@ namespace ACPI
 				{
 					auto io = (MADT::IOAPIC *)entry;
 
-					IOAPIC::allocate(io->id, io->address);
+					IOAPIC::allocate(io->global_int_start, io->id, io->address);
 
 					break;
 				}
@@ -136,6 +137,16 @@ namespace ACPI
 				case MADT::InterruptSourceOverrideEntry:
 				{
 					auto override = (MADT::InterruptSourceOverride *)entry;
+
+					if(override->bus == 0 && override->source == PIT::irq.index)
+					{
+						assert(override->polarity != 2, "Unknown polarity");
+						assert(override->trigger_mode != 2, "Unknown trigger mode");
+
+						PIT::irq.index = override->global_int;
+						PIT::irq.active_low = override->polarity == 3;
+						PIT::irq.edge_triggered = override->trigger_mode != 3;
+					}
 
 					console.s("Interrupt source override - bus: ").u(override->bus).s(" irq: ").u(override->source).s(" int: ").u(override->global_int).endl();
 

@@ -3,6 +3,7 @@
 #include "../console.hpp"
 #include "apic.hpp"
 #include "acpi.hpp"
+#include "pit.hpp"
 #include "cpu.hpp"
 #include "segments.hpp"
 #include "interrupts.hpp"
@@ -40,6 +41,7 @@ void Arch::initialize()
 
 	ACPI::initialize();
 	APIC::initialize();
+	PIT::initialize();
 	CPU::initialize();
 }
 
