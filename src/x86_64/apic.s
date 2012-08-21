@@ -2,6 +2,7 @@
 
 .global apic_registers
 .global apic_calibrate_ticks
+
 .global apic_calibrate_pit_handler
 apic_calibrate_pit_handler:
 	push rax

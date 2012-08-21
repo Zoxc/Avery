@@ -112,41 +112,54 @@ namespace APIC
 
 	volatile uint64_t calibrate_ticks asm("apic_calibrate_ticks");
 
+	Interrupts::InterruptGate pit_gate;
+
 	void calibrate()
 	{
-		Interrupts::disable();
-
-		Interrupts::InterruptGate gate;
-
-		Interrupts::get_gate(33, gate);
+		Interrupts::get_gate(33, pit_gate);
 		Interrupts::set_gate(PIT::vector, &apic_calibrate_pit_handler);
-
 
 		Interrupts::register_handler(32, calibrate_oneshot);
 
-		reg(reg_timer_div) = 1;
+		calibrate_ap();
+	}
+
+	void calibrate_done()
+	{
+		Interrupts::set_gate(PIT::vector, pit_gate);
+
+		for(size_t i = 0; i < CPU::count; ++i)
+			console.s("[CPU ").u(i).s("] APIC tick rate: ").u(CPU::cpus[i].apic_tick_rate).endl();
+	}
+
+	void calibrate_ap()
+	{
+		reg(reg_timer_div) = 2;
 		reg(reg_timer_init) = -1;
 		reg(reg_lvt_timer) = lvt_mask;
 
-		calibrate_ticks = 0;
-
 		Interrupts::enable();
 
-		while(calibrate_ticks < 1);
+		uint64_t current_tick;
+
+		do
+		{
+			current_tick = calibrate_ticks;
+		} while(current_tick > current_tick + 2);
+
+		while(calibrate_ticks < current_tick + 1);
 
 		reg(reg_lvt_timer) = 32;
 
-		while(calibrate_ticks < 2);
+		while(calibrate_ticks < current_tick + 2);
 
 		uint32_t ticks = (uint32_t)-1 - reg(reg_timer_current);
 
 		Interrupts::disable();
 
-		Interrupts::set_gate(PIT::vector, gate);
-
 		reg(reg_lvt_timer) = lvt_mask;
 
-		console.s("APIC ticks in 5 ms: ").u(ticks).endl();
+		CPU::current->apic_tick_rate = ticks;
 	}
 
 	volatile bool oneshot_done;
@@ -163,7 +176,6 @@ namespace APIC
 
 		Interrupts::register_handler(32, simple_oneshot_wake);
 		oneshot_done = false;
-		reg(reg_timer_div) = 3;
 		reg(reg_timer_init) = ticks;
 		reg(reg_lvt_timer) = 32;
 

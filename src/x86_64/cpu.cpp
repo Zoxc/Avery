@@ -181,28 +181,30 @@ void CPU::initialize()
 		APIC::ipi(cpus[i].apic_id, APIC::Init, 0);
 	}
 
-	if(CPU::count == 1)
-		goto started;
+	if(CPU::count != 1)
+	{
+		APIC::simple_oneshot(1300000);
 
-	APIC::simple_oneshot(1300000);
+		send_startup();
 
-	send_startup();
+		send_startup();
 
-	send_startup();
+		console.s("Waiting for the CPUs to start...").endl();
+	}
 
-	console.s("Waiting for the CPUs to start...").endl();
+	Interrupts::enable();
 
 	info->allow_start = true;
 
 	while(!cpus_started())
-		Arch::pause();
+		Arch::halt();
 
-started:
 	processor_setup();
 
 	console.s("All CPUs have started").endl();
 
 	Memory::clear_lower();
+	APIC::calibrate_done();
 }
 
 extern "C" void ap_entry(CPU *cpu)
@@ -217,9 +219,10 @@ extern "C" void ap_entry(CPU *cpu)
 
 	cpu->map_local_page_tables();
 
-	cpu->started = true;
-
 	APIC::initialize_ap();
+	APIC::calibrate_ap();
+
+	cpu->started = true;
 
 	while(true)
 		Arch::halt();

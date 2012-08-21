@@ -23,8 +23,6 @@ void kernel()
 
 	Arch::initialize();
 
-	Interrupts::enable();
-
 	Init::load_modules();
 
 	while(true)

@@ -17,6 +17,7 @@ struct CPU
 	size_t acpi_id;
 	size_t apic_id;
 	uint32_t apic_registers;
+	uint32_t apic_tick_rate;
 	bool started;
 	Memory::Block *stack;
 	Memory::VirtualPage *local_pages;

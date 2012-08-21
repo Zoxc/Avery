@@ -21,6 +21,8 @@ namespace APIC
 	void set_registers(addr_t registers);
 	size_t local_id();
 	void calibrate();
+	void calibrate_ap();
+	void calibrate_done();
 	void ipi(size_t target, MessageType type, size_t vector);
 	void initialize();
 	void initialize_ap();
