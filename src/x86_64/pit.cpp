@@ -12,9 +12,9 @@ namespace PIT
 
 	void initialize()
 	{
-		Interrupts::register_handler(33, pit_interrupt);
+		Interrupts::register_handler(vector, pit_interrupt);
 
-		irq.route(33, APIC::local_id());
+		irq.route(vector, APIC::local_id());
 
 		uint16_t divisor = 1193182 / 200;
 

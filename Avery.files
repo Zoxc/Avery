@@ -73,3 +73,4 @@ src/x86_64/boot/boot.s
 src/x86_64/multiboot/bootstrap/bootstrap.s
 src/x86_64/pit.hpp
 src/x86_64/pit.cpp
+src/x86_64/apic.s

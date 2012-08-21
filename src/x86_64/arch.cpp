@@ -42,6 +42,7 @@ void Arch::initialize()
 	ACPI::initialize();
 	APIC::initialize();
 	PIT::initialize();
+	APIC::calibrate();
 	CPU::initialize();
 }
 

@@ -33,6 +33,12 @@ namespace Interrupts
 
 	typedef void (*handler_t)(const Info &info, uint8_t index, size_t error_code);
 
+	typedef void(*isr_stub_t)();
+
+	void set_gate(uint8_t index, InterruptGate &gate);
+	void set_gate(uint8_t index, isr_stub_t stub);
+	void get_gate(uint8_t index, InterruptGate &gate);
+
 	const size_t handler_count = 256;
 
 	void register_handler(uint8_t index, handler_t handler);

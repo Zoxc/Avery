@@ -1,12 +1,13 @@
 #include "apic.hpp"
 #include "arch.hpp"
+#include "pit.hpp"
 #include "../console.hpp"
 #include "../memory.hpp"
 
 namespace APIC
 {
 	const size_t base_register = 0x1B;
-	volatile uint8_t *registers;
+	volatile uint8_t *registers asm("apic_registers");
 
 	const size_t reg_id = 0x20;
 	const size_t reg_version = 0x30;
@@ -100,6 +101,52 @@ namespace APIC
 		Arch::write_msr(base_register, Arch::read_msr(base_register) | msr_enable_bit);
 
 		reg(reg_siv) = 0xFF | sw_enable;
+	}
+
+	void calibrate_oneshot(const Interrupts::Info &, uint8_t, size_t)
+	{
+		panic("APIC timer calibration failed. Timer too fast.");
+	}
+
+	extern "C" void apic_calibrate_pit_handler();
+
+	volatile uint64_t calibrate_ticks asm("apic_calibrate_ticks");
+
+	void calibrate()
+	{
+		Interrupts::disable();
+
+		Interrupts::InterruptGate gate;
+
+		Interrupts::get_gate(33, gate);
+		Interrupts::set_gate(PIT::vector, &apic_calibrate_pit_handler);
+
+
+		Interrupts::register_handler(32, calibrate_oneshot);
+
+		reg(reg_timer_div) = 1;
+		reg(reg_timer_init) = -1;
+		reg(reg_lvt_timer) = lvt_mask;
+
+		calibrate_ticks = 0;
+
+		Interrupts::enable();
+
+		while(calibrate_ticks < 1);
+
+		reg(reg_lvt_timer) = 32;
+
+		while(calibrate_ticks < 2);
+
+		uint32_t ticks = (uint32_t)-1 - reg(reg_timer_current);
+
+		Interrupts::disable();
+
+		Interrupts::set_gate(PIT::vector, gate);
+
+		reg(reg_lvt_timer) = lvt_mask;
+
+		console.s("APIC ticks in 5 ms: ").u(ticks).endl();
 	}
 
 	volatile bool oneshot_done;

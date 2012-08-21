@@ -20,7 +20,15 @@ namespace Interrupts
 
 	handler_t handlers[handler_count] asm("interrupt_handlers");
 
-	typedef void(*isr_stub_t)();
+	void get_gate(uint8_t index, InterruptGate &gate)
+	{
+		gate = idt.gates[index];
+	}
+
+	void set_gate(uint8_t index, InterruptGate &gate)
+	{
+		idt.gates[index] = gate;
+	}
 
 	void set_gate(uint8_t index, isr_stub_t stub)
 	{
