@@ -224,6 +224,5 @@ extern "C" void ap_entry(CPU *cpu)
 
 	cpu->started = true;
 
-	while(true)
-		Arch::halt();
+	Arch::run();
 };

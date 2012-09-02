@@ -1,6 +1,6 @@
 #include "vga.hpp"
 #include "../lib.hpp"
-#include "../arch.hpp"
+#include "../arch/common.hpp"
 
 uint8_t VGAConsoleBackend::color_map[Console::ColorCount] = {
 	7, // Default

@@ -1,5 +1,6 @@
 #include "pit.hpp"
 #include "apic.hpp"
+#include "interrupts.hpp"
 
 namespace PIT
 {

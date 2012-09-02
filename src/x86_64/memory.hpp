@@ -30,6 +30,7 @@ namespace Memory
 
 	struct VirtualPage
 	{
+	private:
 		volatile char data[Arch::page_size];
 	} __attribute__((may_alias)) __attribute__((packed));
 

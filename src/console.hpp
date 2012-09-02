@@ -1,5 +1,6 @@
 #pragma once
 #include "common.hpp"
+#include "lock.hpp"
 
 class ConsoleBackend;
 
@@ -55,7 +56,7 @@ public:
 	void new_buffer(void *buffer);
 	
 private:
-	ConsoleBackend *backend;
+	LockedObject<ConsoleBackend *> backend;
 
 	size_t x_offset;
 	size_t y_offset;

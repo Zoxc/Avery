@@ -1,4 +1,4 @@
-#include "arch.hpp"
+#include "arch/common.hpp"
 #include "lib.hpp"
 #include "console.hpp"
 #include "params.hpp"
@@ -25,6 +25,5 @@ void kernel()
 
 	Init::load_modules();
 
-	while(true)
-		Arch::halt();
+	Arch::run();
 }

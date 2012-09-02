@@ -24,7 +24,9 @@ struct CPU
 	void *stack_end;
 	Segments::TaskState tss;
 	void *syscall_temp_rsp;
+
 	Thread *thread;
+	Thread *scheduled_thread;
 
 	static const size_t local_page_count = 1;
 

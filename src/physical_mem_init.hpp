@@ -1,6 +1,5 @@
 #pragma once
 #include "common.hpp"
-#include "arch.hpp"
 #include "params.hpp"
 
 namespace Memory

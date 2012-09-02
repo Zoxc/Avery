@@ -16,6 +16,8 @@ namespace APIC
 		External
 	};
 
+	static const size_t timer_vector = 33;
+
 	void *get_registers();
 	void eoi();
 	void set_registers(addr_t registers);
@@ -27,4 +29,5 @@ namespace APIC
 	void initialize();
 	void initialize_ap();
 	void simple_oneshot(size_t ticks);
+	void start_timer();
 };

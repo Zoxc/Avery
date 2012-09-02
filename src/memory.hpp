@@ -1,6 +1,6 @@
 #pragma once
 #include "common.hpp"
-#include "arch.hpp"
+#include "arch/memory.hpp"
 #include "util/linked-list.hpp"
 #include "util/fast-list.hpp"
 

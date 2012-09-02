@@ -1,4 +1,3 @@
-#include "arch.hpp"
 #include "physical_mem.hpp"
 #include "physical_mem_init.hpp"
 #include "console.hpp"

@@ -1,5 +1,6 @@
 #include "apic.hpp"
 #include "arch.hpp"
+#include "interrupts.hpp"
 #include "pit.hpp"
 #include "../console.hpp"
 #include "../memory.hpp"
@@ -116,10 +117,10 @@ namespace APIC
 
 	void calibrate()
 	{
-		Interrupts::get_gate(33, pit_gate);
+		Interrupts::get_gate(PIT::vector, pit_gate);
 		Interrupts::set_gate(PIT::vector, &apic_calibrate_pit_handler);
 
-		Interrupts::register_handler(32, calibrate_oneshot);
+		Interrupts::register_handler(timer_vector, calibrate_oneshot);
 
 		calibrate_ap();
 	}
@@ -149,7 +150,7 @@ namespace APIC
 
 		while(calibrate_ticks < current_tick + 1);
 
-		reg(reg_lvt_timer) = 32;
+		reg(reg_lvt_timer) = timer_vector;
 
 		while(calibrate_ticks < current_tick + 2);
 
@@ -167,21 +168,34 @@ namespace APIC
 	void simple_oneshot_wake(const Interrupts::Info &, uint8_t, size_t)
 	{
 		oneshot_done = true;
-		reg(reg_eoi) = 0;
+		eoi();
 	}
 
 	void simple_oneshot(size_t ticks)
 	{
 		Interrupts::disable();
 
-		Interrupts::register_handler(32, simple_oneshot_wake);
+		Interrupts::register_handler(timer_vector, simple_oneshot_wake);
 		oneshot_done = false;
 		reg(reg_timer_init) = ticks;
-		reg(reg_lvt_timer) = 32;
+		reg(reg_lvt_timer) = timer_vector;
 
 		Interrupts::enable();
 
 		while(!oneshot_done)
 			Arch::pause();
+	}
+
+	void tick(const Interrupts::Info &info, uint8_t, size_t)
+	{
+		eoi();
+	}
+
+	void start_timer()
+	{
+		Interrupts::register_handler(timer_vector, tick);
+
+		reg(reg_timer_init) = CPU::current->apic_tick_rate;
+		reg(reg_lvt_timer) = timer_vector | periodic_timer;
 	}
 };

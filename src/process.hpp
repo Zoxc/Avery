@@ -1,5 +1,5 @@
 #pragma once
-#include "arch.hpp"
+#include "arch/memory.hpp"
 #include "user-memory.hpp"
 #include "util/vector.hpp"
 

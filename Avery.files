@@ -16,7 +16,6 @@ src/consoles/fb.hpp
 src/consoles/fb.cpp
 src/consoles/display.hpp
 src/consoles/display.cpp
-src/arch.hpp
 src/physical_mem_init.hpp
 src/physical_mem_init.cpp
 src/params.hpp
@@ -77,3 +76,9 @@ src/x86_64/apic.s
 src/x86_64/lock.hpp
 src/lock.hpp
 src/x86_64/lock.cpp
+src/scheduler.hpp
+src/scheduler.cpp
+src/arch/memory.hpp
+src/arch/lock.hpp
+src/arch/common.hpp
+src/arch/arch.hpp

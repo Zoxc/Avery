@@ -1,6 +1,5 @@
 #pragma once
 #include "common.hpp"
-#include "arch.hpp"
 #include "memory.hpp"
 
 namespace User

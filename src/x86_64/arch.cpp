@@ -46,6 +46,16 @@ void Arch::initialize()
 	CPU::initialize();
 }
 
+void Arch::run()
+{
+	APIC::start_timer();
+
+	Interrupts::enable();
+
+	while(true)
+		Arch::halt();
+}
+
 size_t Arch::read_msr(uint32_t reg)
 {
 	uint32_t low, high;

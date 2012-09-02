@@ -1,6 +1,6 @@
 #include "console.hpp"
 #include "lib.hpp"
-#include "arch.hpp"
+#include "arch/common.hpp"
 
 Console console;
 
@@ -12,17 +12,23 @@ Console::Console() : text_color(Default), hex_fg(Value)
 
 void Console::initialize(ConsoleBackend *backend)
 {
-	this->backend = backend;
+	this->backend.access([&](ConsoleBackend *&console_backend) {
+		console_backend = backend;
+	});
 }
 
 void Console::get_buffer_info(addr_t &buffer, size_t &buffer_size)
 {
-	backend->get_buffer_info(buffer, buffer_size);
+	backend.access([&](ConsoleBackend *backend) {
+		backend->get_buffer_info(buffer, buffer_size);
+	});
 }
 
 void Console::new_buffer(void *buffer)
 {
-	backend->new_buffer(buffer);
+	backend.access([&](ConsoleBackend *backend) {
+		backend->new_buffer(buffer);
+	});
 }
 
 void Console::do_panic()
@@ -54,7 +60,9 @@ Console &Console::color(Color new_color)
 {
 	text_color = new_color;
 
-	backend->color(new_color);
+	backend.access([&](ConsoleBackend *backend) {
+		backend->color(new_color);
+	});
 	
 	return *this;
 }
@@ -140,12 +148,14 @@ void Console::put_base_padding(size_t value, size_t base, size_t min_size)
 
 void Console::newline()
 {
-	backend->print('\n');
+	c('\n');
 }
 
 Console &Console::c(const char c)
 {
-	backend->print(c);
+	backend.access([&](ConsoleBackend *backend) {
+		backend->print(c);
+	});
 	
 	return *this;
 }
@@ -166,7 +176,9 @@ Console &Console::s(const char *str)
 
 Console &Console::clear(void)
 {
-	backend->clear();
+	backend.access([&](ConsoleBackend *backend) {
+		backend->clear();
+	});
 
 	return *this;
 }

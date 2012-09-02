@@ -1,10 +1,11 @@
 #include "init.hpp"
-#include "../arch.hpp"
+#include "../arch/common.hpp"
 #include "../lib.hpp"
 #include "../console.hpp"
 #include "../params.hpp"
 #include "../process.hpp"
 #include "../thread.hpp"
+#include "../scheduler.hpp"
 
 static ptr_t load_module(Process *process, addr_t base, addr_t end)
 {
@@ -34,20 +35,25 @@ static void start_process(const char *name, addr_t base, addr_t end)
 	thread->registers.set_ip(entry);
 	thread->registers.set_stack((ptr_t)(thread->stack->base + thread->stack->pages));
 
-	CPU::current->thread = thread;
-
-	Init::enter_usermode(thread);
+	Scheduler::queue(thread);
 }
 
 void Init::load_modules()
 {
+	bool found_userland = false;
+
 	for(size_t i = 0; i < Params::info.segment_count; ++i)
 	{
 		Params::Segment &segment = Params::info.segments[i];
 
 		if(segment.type == Params::SegmentModule && strncmp(segment.name, "user", sizeof(segment.name)) == 0)
+		{
 			start_process(segment.name, segment.base, segment.end);
+
+			found_userland = true;
+		}
 	}
 
-	panic("Didn't find the userland module");
+	if(!found_userland)
+		panic("Didn't find the userland module");
 }

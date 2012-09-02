@@ -1,5 +1,5 @@
 #pragma once
-#include "arch.hpp"
+#include "arch/lock.hpp"
 
 struct Lock
 {

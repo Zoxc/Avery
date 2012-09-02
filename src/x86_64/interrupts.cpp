@@ -1,5 +1,6 @@
 #include "interrupts.hpp"
 #include "apic.hpp"
+#include "segments.hpp"
 #include "../console.hpp"
 
 namespace Interrupts
@@ -20,6 +21,11 @@ namespace Interrupts
 
 	handler_t handlers[handler_count] asm("interrupt_handlers");
 
+	bool Info::was_kernel()
+	{
+		return cs == Segments::code_segment;
+	}
+
 	void get_gate(uint8_t index, InterruptGate &gate)
 	{
 		gate = idt.gates[index];
@@ -39,7 +45,7 @@ namespace Interrupts
 		gate.target_low = target & 0xFFFF;
 		gate.target_medium = (target >> 16) & 0xFFFF;
 		gate.target_high = (target >> 32) & 0xFFFFFFFF;
-		gate.segment_selector = 0x08;
+		gate.segment_selector = Segments::code_segment;
 		gate.type = 0xE;
 		gate.zero = 0;
 		gate.privilege_level = 0;

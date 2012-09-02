@@ -7,7 +7,7 @@ namespace PIT
 	extern IRQ irq;
 	extern volatile size_t ticks;
 
-	static const size_t vector = 33;
+	static const size_t vector = 34;
 
 	void initialize();
 };

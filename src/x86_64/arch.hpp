@@ -47,6 +47,8 @@ namespace Arch
 
 	void halt();
 
+	void run();
+
 	void initialize_basic();
 	void initialize_memory();
 	void initialize();
