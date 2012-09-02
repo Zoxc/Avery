@@ -27,7 +27,7 @@ namespace Interrupts
 	{
 		uint16_t ds;
 		uint16_t padding[3];
-		uint64_t r11, r10, r9, r8, rdi, rcx, rax, rsi, rdx;
+		uint64_t r15, r14, r13, r12, r11, r10, r9, r8, rdi, rcx, rbp, rbx, rax, rsi, rdx;
 		uint64_t rip, cs, rflags, rsp, ss;
 
 		bool was_kernel();
